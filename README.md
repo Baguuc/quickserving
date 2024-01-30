@@ -10,7 +10,7 @@
 1. Install prerequisites cargo and rustc from [official rust website](http://rust-lang.org)
 2. Clone the repository 
 ```bash
-git clone <repo_url>
+git clone https://github.com/Baguuc/quickserving.git
 ```
 3. Build the executable
 ```bash
