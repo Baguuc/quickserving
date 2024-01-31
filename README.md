@@ -31,12 +31,16 @@ quickserving
 ```
 
 ### Configuration
-IMPORTANT: Quickserving don't support partial config options, you will have to specify all options when configuring.
 Quickserving has a basic TOML configuration file to configure your server for each project, to start create a file "Quickserving.toml" in your project directory.
+
+###### IMPORTANT: Quickserving don't support partial config options, you will have to specify all options when configuring.
+
+###### WARNING: when specifing directories, you are only able to use subfolders of you current location e.g. the project root is ~/quickserving_example so only possible directories are ~/quickserving_example/**/*
+
+
 The avaible configuration options:
 * dir - the main directory where all your html files are in, if you specify wrong dir the site could not be served correctly.
 * static_dir - the directory where your styles, images, scripts etc. are located, if it's not specified your static files are not goind to work, they should be accessed regular way by using relative paths ("./", "../", "../.." etc.) if it is not working quickserving is also registering /static route for all the static files.
-WARNING: when specifing directories, you are only able to use subfolders of you current location e.g. the project root is ~/quickserving_example so only possible directories are ~/quickserving_example/**/*
 * port - the port server will be binded to.
 
 Example Quickserving.toml:
@@ -49,7 +53,7 @@ these are also the default values.
 
 ### Routing
 Quickserving registers routes for all html files and static files, static files are always going to be in route /static, html files will be routed the same as the path they have, also the index are always going to be entry point of a directory  example:
-/index.html => /index.html, /index, /
-/about.html => /about.html /about
-/portfolio/index.html => /portfolio/index.html, /portfolio/index, /portfolio
+* /index.html => /index.html, /index, /
+* /about.html => /about.html, /about
+* /portfolio/index.html => /portfolio/index.html, /portfolio/index, /portfolio
 

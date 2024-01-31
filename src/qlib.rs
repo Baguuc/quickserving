@@ -147,27 +147,27 @@ pub async fn qserve(options: QServeOptions) {
     for page in pages {
         // format route for the page
 
-        let route = (page.clone())
-            .to_string()
-            .clone()
-            .replace(dir, "/")
-            .replace(".html", "")
-            .replace(dir, "");
+        let route = (page.clone()).to_string().clone().replace(dir, "/");
         // clone page as resource to reuse
         let resource = page.clone();
 
         // route
-        app = app.route(&route.as_str(), get(read_resource(resource.clone())));
+        app = app.route(
+            &route.clone().as_str(),
+            get(read_resource(resource.clone())),
+        );
+        println!("Registered route: \"{}\"", route);
+
+        let route = route.trim_end_matches(".html");
+
+        app = app.route(&route, get(read_resource(resource.clone())));
         println!("Registered route: \"{}\"", route);
 
         if route.ends_with("/index") {
             let route_len = route.len();
 
             // route the alias with just slash instead of "/index" at the end
-            let alias: String = (route.clone().to_string())
-                .chars()
-                .take(route_len - 5)
-                .collect();
+            let alias: String = (route.to_string()).chars().take(route_len - 5).collect();
 
             app = app.route(&alias, get(read_resource(resource.clone())));
 
