@@ -1,0 +1,10 @@
+[package]
+name = "quickserving-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+log = "0.4.21"
+simple_logger = "5.0.0"
+chrono = "0.4.19"
+mime_guess = "2.0.5"
