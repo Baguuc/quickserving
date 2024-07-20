@@ -1,10 +1,10 @@
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, ops::{Index, IndexMut}};
 
 
 pub struct Request {
-    pub method: String,
-    pub path: String,
-    pub version: String,
+    pub method: Option<String>,
+    pub path: Option<String>,
+    pub version: Option<String>,
     pub a_im: Option<String>,
     pub accept: Option<String>,
     pub accept_charset: Option<String>,
@@ -46,6 +46,108 @@ pub struct Request {
 }
 
 
+impl Index<&str> for Request {
+    type Output = Option<String>;
+
+    fn index(&self, index: &str) -> &Self::Output {
+        return match index {
+            "method" => &self.method,
+            "path" => &self.path,
+            "version" => &self.version,
+            "a_im" => &self.a_im,
+            "accept" => &self.accept,
+            "accept_charset" => &self.accept_charset,
+            "accept_encoding" => &self.accept_encoding,
+            "accept_language" => &self.accept_language,
+            "accept_datetime" => &self.accept_datetime,
+            "access_control_request_method" => &self.access_control_request_method,
+            "access_control_request_headers" => &self.access_control_request_headers,
+            "authorization" => &self.authorization,
+            "cache_control" => &self.cache_control,
+            "connection" => &self.connection,
+            "content_length" => &self.content_length,
+            "content_type" => &self.content_type,
+            "cookie" => &self.cookie,
+            "date" => &self.date,
+            "expect" => &self.expect,
+            "forwarded" => &self.forwarded,
+            "from" => &self.from,
+            "host" => &self.host,
+            "if_match" => &self.if_match,
+            "if_modified_since" => &self.if_modified_since,
+            "if_none_match" => &self.if_none_match,
+            "if_range" => &self.if_range,
+            "if_unmodified_since" => &self.if_unmodified_since,
+            "max_forwards" => &self.max_forwards,
+            "origin" => &self.origin,
+            "pragma" => &self.pragma,
+            "proxy_authorization" => &self.proxy_authorization,
+            "range" => &self.range,
+            "referer" => &self.referer,
+            "te" => &self.te,
+            "user_agent" => &self.user_agent,
+            "upgrade" => &self.upgrade,
+            "via" => &self.via,
+            "warning" => &self.warning,
+            "dnt" => &self.dnt,
+            "x_requested_with" => &self.x_requested_with,
+            "x_csrf_token" => &self.x_csrf_token,
+            _ => panic!("Wrong field name provided.")
+        };
+    }
+}
+
+
+impl IndexMut<&str> for Request {
+    fn index_mut(&mut self, index: &str) -> &mut Self::Output {
+        return match index {
+            "method" => &mut self.method,
+            "path" => &mut self.path,
+            "version" => &mut self.version,
+            "a_im" => &mut self.a_im,
+            "accept" => &mut self.accept,
+            "accept_charset" => &mut self.accept_charset,
+            "accept_encoding" => &mut self.accept_encoding,
+            "accept_language" => &mut self.accept_language,
+            "accept_datetime" => &mut self.accept_datetime,
+            "access_control_request_method" => &mut self.access_control_request_method,
+            "access_control_request_headers" => &mut self.access_control_request_headers,
+            "authorization" => &mut self.authorization,
+            "cache_control" => &mut self.cache_control,
+            "connection" => &mut self.connection,
+            "content_length" => &mut self.content_length,
+            "content_type" => &mut self.content_type,
+            "cookie" => &mut self.cookie,
+            "date" => &mut self.date,
+            "expect" => &mut self.expect,
+            "forwarded" => &mut self.forwarded,
+            "from" => &mut self.from,
+            "host" => &mut self.host,
+            "if_match" => &mut self.if_match,
+            "if_modified_since" => &mut self.if_modified_since,
+            "if_none_match" => &mut self.if_none_match,
+            "if_range" => &mut self.if_range,
+            "if_unmodified_since" => &mut self.if_unmodified_since,
+            "max_forwards" => &mut self.max_forwards,
+            "origin" => &mut self.origin,
+            "pragma" => &mut self.pragma,
+            "proxy_authorization" => &mut self.proxy_authorization,
+            "range" => &mut self.range,
+            "referer" => &mut self.referer,
+            "te" => &mut self.te,
+            "user_agent" => &mut self.user_agent,
+            "upgrade" => &mut self.upgrade,
+            "via" => &mut self.via,
+            "warning" => &mut self.warning,
+            "dnt" => &mut self.dnt,
+            "x_requested_with" => &mut self.x_requested_with,
+            "x_csrf_token" => &mut self.x_csrf_token,
+            _ => panic!("Wrong field name provided.")
+        };
+    }
+}
+
+
 impl Request {
     pub fn from_string(string: String) -> Result<Self, Box<dyn Error>> {
         let mut rows = string.lines();
@@ -67,9 +169,9 @@ impl Request {
         }
 
         let mut request_data = Request {
-            method: columns.get(0).unwrap().to_string(),
-            path: columns.get(1).unwrap().to_string(),
-            version: columns.get(2).unwrap().to_string(),
+            method: Some(columns.get(0).unwrap().to_string()),
+            path: Some(columns.get(1).unwrap().to_string()),
+            version: Some(columns.get(2).unwrap().to_string()),
             a_im: None,
             accept: None,
             accept_charset: None,
@@ -109,46 +211,6 @@ impl Request {
             x_requested_with: None,
             x_csrf_token: None,
         };
-
-        let mut operations: HashMap<&str, fn(request_data: &mut Request, value: String) -> ()> = HashMap::new();
-        operations.insert("A-IM", |request_data, value| request_data.a_im = Some(value));
-        operations.insert("ACCEPT", |request_data, value| request_data.accept = Some(value));
-        operations.insert("ACCEPT-CHARSET", |request_data, value| request_data.accept_charset = Some(value));
-        operations.insert("ACCEPT-ENCODING", |request_data, value| request_data.accept_encoding = Some(value));
-        operations.insert("ACCEPT-LANGUAGE", |request_data, value| request_data.accept_language = Some(value));
-        operations.insert("ACCEPT-DATETIME", |request_data, value| request_data.accept_datetime = Some(value));
-        operations.insert("ACCESS-CONTROL-REQUEST-METHOD", |request_data, value| request_data.access_control_request_method = Some(value));
-        operations.insert("ACCESS-CONTROL-REQUEST-HEADERS", |request_data, value| request_data.access_control_request_headers = Some(value));
-        operations.insert("AUTHORIZATION", |request_data, value| request_data.authorization = Some(value));
-        operations.insert("CACHE-CONTROL", |request_data, value| request_data.cache_control = Some(value));
-        operations.insert("CONNECTION", |request_data, value| request_data.connection = Some(value));
-        operations.insert("CONTENT-LENGTH", |request_data, value| request_data.content_length = Some(value));
-        operations.insert("CONTENT-TYPE", |request_data, value| request_data.content_type = Some(value));
-        operations.insert("COOKIE", |request_data, value| request_data.cookie = Some(value));
-        operations.insert("DATE", |request_data, value| request_data.date = Some(value));
-        operations.insert("EXPECT", |request_data, value| request_data.expect = Some(value));
-        operations.insert("FORWARDED", |request_data, value| request_data.forwarded = Some(value));
-        operations.insert("FROM", |request_data, value| request_data.from = Some(value));
-        operations.insert("HOST", |request_data, value| request_data.host = Some(value));
-        operations.insert("IF-MATCH", |request_data, value| request_data.if_match = Some(value));
-        operations.insert("IF-MODIFIED-SINCE", |request_data, value| request_data.if_modified_since = Some(value));
-        operations.insert("IF-NONE-MATCH", |request_data, value| request_data.if_none_match = Some(value));
-        operations.insert("IF-RANGE", |request_data, value| request_data.if_range = Some(value));
-        operations.insert("IF-UNMODIFIED-SINCE", |request_data, value| request_data.if_unmodified_since = Some(value));
-        operations.insert("MAX-FORWARDS", |request_data, value| request_data.authorization = Some(value));
-        operations.insert("ORIGIN", |request_data, value| request_data.origin = Some(value));
-        operations.insert("PRAGMA", |request_data, value| request_data.pragma = Some(value));
-        operations.insert("PROXY-AUTHORIZATION", |request_data, value| request_data.proxy_authorization = Some(value));
-        operations.insert("RANGE", |request_data, value| request_data.range = Some(value));
-        operations.insert("REFERER", |request_data, value| request_data.referer = Some(value));
-        operations.insert("TE", |request_data, value| request_data.te = Some(value));
-        operations.insert("USER-AGENT", |request_data, value| request_data.user_agent = Some(value));
-        operations.insert("UPGRADE", |request_data, value| request_data.upgrade = Some(value));
-        operations.insert("VIA", |request_data, value| request_data.via = Some(value));
-        operations.insert("WARNING", |request_data, value| request_data.warning = Some(value));
-        operations.insert("DNT", |request_data, value| request_data.dnt = Some(value));
-        operations.insert("X-REQUESTED-WITH", |request_data, value| request_data.x_requested_with = Some(value));
-        operations.insert("X-CSRF-TOKEN", |request_data, value| request_data.x_csrf_token = Some(value));
         
 
         for row in rows {
@@ -163,15 +225,7 @@ impl Request {
             let key = split.get(0).unwrap();
             let value = split.get(1).unwrap();
 
-
-            let set_value = operations.get(key.to_uppercase().as_str());
-
-            if set_value.is_none() {
-                continue;
-            }
-            let set_value = set_value.unwrap();
-
-            set_value(&mut request_data, value.to_string());
+            request_data[key] = Some(value.to_string());
         }
 
         return Ok(request_data);
