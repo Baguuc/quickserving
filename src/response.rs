@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, ops::{Index, IndexMut}};
 
 
 pub struct Response {
@@ -39,6 +39,100 @@ pub struct Response {
     pub via: Option<String>,
     pub warning: Option<String>,
     pub www_authenticate: Option<String>
+}
+
+
+impl Index<&str> for Response {
+    type Output = Option<String>;
+
+    fn index(&self, index: &str) -> &Self::Output {
+        return match index {
+            "accept_patch" => &self.accept_patch,
+            "accept_ranges" => &self.accept_ranges,
+            "age" => &self.age,
+            "allow" => &self.allow,
+            "alt_svc" => &self.alt_svc,
+            "cache_control" => &self.cache_control,
+            "connection" => &self.connection,
+            "content_disposition" => &self.content_disposition,
+            "content_encoding" => &self.content_encoding,
+            "content_language" => &self.content_language,
+            "content_length" => &self.content_length,
+            "content_location" => &self.content_location,
+            "content_range" => &self.content_range,
+            "content_type" => &self.content_type,
+            "date" => &self.date,
+            "delta_base" => &self.delta_base,
+            "etag" => &self.etag,
+            "expires" => &self.expires,
+            "im" => &self.im,
+            "last_modified" => &self.last_modified,
+            "link" => &self.link,
+            "location" => &self.location,
+            "pragma" => &self.pragma,
+            "proxy_authenticate" => &self.proxy_authenticate,
+            "public_key_pins" => &self.public_key_pins,
+            "retry_after" => &self.retry_after,
+            "server" => &self.server,
+            "set_cookie" => &self.set_cookie,
+            "strict_transport_security" => &self.strict_transport_security,
+            "trailer" => &self.trailer,
+            "transfer_encoding" => &self.transfer_encoding,
+            "tk" => &self.tk,
+            "upgrade" => &self.upgrade,
+            "vary" => &self.vary,
+            "via" => &self.via,
+            "warning" => &self.warning,
+            "www_authenticate" => &self.www_authenticate,
+            _ => panic!("Wrong field name provided.")
+        };
+    }
+}
+
+
+impl IndexMut<&str> for Response {
+    fn index_mut(&mut self, index: &str) -> &mut Self::Output {
+        return match index {
+            "accept_patch" => &mut self.accept_patch,
+            "accept_ranges" => &mut self.accept_ranges,
+            "age" => &mut self.age,
+            "allow" => &mut self.allow,
+            "alt_svc" => &mut self.alt_svc,
+            "cache_control" => &mut self.cache_control,
+            "connection" => &mut self.connection,
+            "content_disposition" => &mut self.content_disposition,
+            "content_encoding" => &mut self.content_encoding,
+            "content_language" => &mut self.content_language,
+            "content_length" => &mut self.content_length,
+            "content_location" => &mut self.content_location,
+            "content_range" => &mut self.content_range,
+            "content_type" => &mut self.content_type,
+            "date" => &mut self.date,
+            "delta_base" => &mut self.delta_base,
+            "etag" => &mut self.etag,
+            "expires" => &mut self.expires,
+            "im" => &mut self.im,
+            "last_modified" => &mut self.last_modified,
+            "link" => &mut self.link,
+            "location" => &mut self.location,
+            "pragma" => &mut self.pragma,
+            "proxy_authenticate" => &mut self.proxy_authenticate,
+            "public_key_pins" => &mut self.public_key_pins,
+            "retry_after" => &mut self.retry_after,
+            "server" => &mut self.server,
+            "set_cookie" => &mut self.set_cookie,
+            "strict_transport_security" => &mut self.strict_transport_security,
+            "trailer" => &mut self.trailer,
+            "transfer_encoding" => &mut self.transfer_encoding,
+            "tk" => &mut self.tk,
+            "upgrade" => &mut self.upgrade,
+            "vary" => &mut self.vary,
+            "via" => &mut self.via,
+            "warning" => &mut self.warning,
+            "www_authenticate" => &mut self.www_authenticate,
+            _ => panic!("Wrong field name provided.")
+        };
+    }
 }
 
 
@@ -85,45 +179,6 @@ impl Response {
             warning: None,
             www_authenticate: None,
         };
-
-        let mut operations: HashMap<&str, fn(response_data: &mut Response, value: String) -> ()> = HashMap::new();
-        operations.insert("Accept-Patch", |response_data, value| response_data.accept_patch = Some(value));
-        operations.insert("Accept-Ranges", |response_data, value| response_data.accept_ranges = Some(value));
-        operations.insert("Age", |response_data, value| response_data.age = Some(value));
-        operations.insert("Allow", |response_data, value| response_data.allow = Some(value));
-        operations.insert("Alt-Svc", |response_data, value| response_data.alt_svc = Some(value));
-        operations.insert("Cache-Control", |response_data, value| response_data.cache_control = Some(value));
-        operations.insert("Connection", |response_data, value| response_data.connection = Some(value));
-        operations.insert("Content-Disposition", |response_data, value| response_data.content_disposition = Some(value));
-        operations.insert("Content-Encoding", |response_data, value| response_data.content_encoding = Some(value));
-        operations.insert("Content-Language", |response_data, value| response_data.content_language = Some(value));
-        operations.insert("Content-Length", |response_data, value| response_data.content_length = Some(value));
-        operations.insert("Content-Location", |response_data, value| response_data.content_location = Some(value));
-        operations.insert("Content-Range", |response_data, value| response_data.content_range = Some(value));
-        operations.insert("Content-Type", |response_data, value| response_data.content_type = Some(value));
-        operations.insert("Date", |response_data, value| response_data.date = Some(value));
-        operations.insert("Delta-Base", |response_data, value| response_data.delta_base = Some(value));
-        operations.insert("ETag", |response_data, value| response_data.etag = Some(value));
-        operations.insert("Expires", |response_data, value| response_data.expires = Some(value));
-        operations.insert("IM", |response_data, value| response_data.im = Some(value));
-        operations.insert("Last-Modified", |response_data, value| response_data.last_modified = Some(value));
-        operations.insert("Link", |response_data, value| response_data.link = Some(value));
-        operations.insert("Location", |response_data, value| response_data.location = Some(value));
-        operations.insert("Pragma", |response_data, value| response_data.pragma = Some(value));
-        operations.insert("Proxy-Authenticate", |response_data, value| response_data.proxy_authenticate = Some(value));
-        operations.insert("Public-Key-Pins", |response_data, value| response_data.public_key_pins = Some(value));
-        operations.insert("Retry-After", |response_data, value| response_data.retry_after = Some(value));
-        operations.insert("Server", |response_data, value| response_data.server = Some(value));
-        operations.insert("Set-Cookie", |response_data, value| response_data.set_cookie = Some(value));
-        operations.insert("Strict-Transport-Security", |response_data, value| response_data.strict_transport_security = Some(value));
-        operations.insert("Trailer", |response_data, value| response_data.trailer = Some(value));
-        operations.insert("Transfer-Encoding", |response_data, value| response_data.transfer_encoding = Some(value));
-        operations.insert("Tk", |response_data, value| response_data.tk = Some(value));
-        operations.insert("Upgrade", |response_data, value| response_data.upgrade = Some(value));
-        operations.insert("Vary", |response_data, value| response_data.vary = Some(value));
-        operations.insert("Via", |response_data, value| response_data.via = Some(value));
-        operations.insert("Warning", |response_data, value| response_data.warning = Some(value));
-        operations.insert("WWW-Authenticate", |response_data, value| response_data.www_authenticate = Some(value));
         
 
         for row in rows {
@@ -139,14 +194,7 @@ impl Response {
             let value = split.get(1).unwrap();
 
 
-            let set_value = operations.get(key.to_uppercase().as_str());
-
-            if set_value.is_none() {
-                continue;
-            }
-            let set_value = set_value.unwrap();
-
-            set_value(&mut response_data, value.to_string());
+            response_data[key] = Some(value.to_string());
         }
 
         return Ok(response_data);
