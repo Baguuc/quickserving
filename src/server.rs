@@ -20,7 +20,7 @@ pub fn listen(config: Config) -> Result<(), Box<dyn Error>> {
         // we read every request that the listener has recieved and try to handle it
         let (stream, _) = listener.accept().unwrap();
 
-        let handle = handle_connection(stream, &config.directory);
+        let handle = handle_connection(stream, &config);
         
         if handle.is_err() {
             warn!("Error occured while establishing connection with user. {}", handle.err().unwrap());
@@ -30,7 +30,7 @@ pub fn listen(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 
-fn handle_connection(mut stream: TcpStream, serving_dir: &String) -> Result<(), Box<dyn Error>> {
+fn handle_connection(mut stream: TcpStream, config: &Config) -> Result<(), Box<dyn Error>> {
     // we initialize out request buffer that we will be reading request's data into
     let mut request_buf = [0u8; 4096];
     // this will represent all out decoded data of request
@@ -66,14 +66,19 @@ fn handle_connection(mut stream: TcpStream, serving_dir: &String) -> Result<(), 
         return Err("Error while parsing request. Invalid request.".into());
     }
 
-    let request = request.unwrap();
+    let mut request = request.unwrap();
+
+    if request.path.clone().unwrap().ends_with("/") {
+        request.path = Some(format!("{}{}", request.path.unwrap(), config.index_file).to_string());
+    }
+    
     info!(
         "{} requested path {}.",
         if request.user_agent.is_some() { request.user_agent.unwrap() } else { "User".to_string() },
         request.path.clone().unwrap()
     );
 
-    let resource_path = format!("{}/{}", serving_dir, request.path.clone().unwrap());
+    let resource_path = format!("{}/{}", config.directory, request.path.clone().unwrap());
 
     let resource_content = fs::read_to_string(resource_path);
 

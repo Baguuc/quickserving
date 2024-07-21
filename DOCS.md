@@ -5,6 +5,7 @@
 
   - port (field) - represents the port that will be used to launch the HTTP server on.
   - directory (field) - represents the root directory that contains the files to serve.
+  - index_file (field) - represents the file that will be read from requested path when user requests url ending with '/'.
 
 - quickserving-core::request::Request (struct)
   It represents a HTTP request.
@@ -24,5 +25,6 @@
 
 - quickserving-core::server::listen (function) <br>
   starts the HTTP server. <br>
+  Caution: if user requests url ending with / this function will be try to read index.html in that directory by default.
   parameters:
   - config: quickserving-core::config::Config
