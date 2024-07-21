@@ -159,8 +159,6 @@ impl Response {
         }
         let first_row = first_row.unwrap();
 
-        let rows = rows.skip(1);
-
         let columns = first_row
             .split(' ')
             .collect::<Vec<&str>>();
