@@ -223,7 +223,11 @@ impl Response {
                 continue;
             }
 
-            let key = split.get(0).unwrap();
+            let key = split.get(0).unwrap().to_lowercase().replace("-", "_");
+
+            if !Response::field_names().contains(&key.as_str()) {
+                continue;
+            }
             let value = split.get(1).unwrap();
 
 
