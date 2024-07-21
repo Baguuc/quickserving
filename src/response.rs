@@ -243,8 +243,13 @@ impl Response {
             self.status_code.clone().unwrap(),
             self.reason.clone().unwrap()
         );
+        
 
         for field_name in Self::field_names() {
+            if vec!["version", "status_code", "reason"].contains(field_name) {
+                continue;
+            }
+
             let field_value = &self[*field_name];
 
             if field_value.is_none() {
@@ -252,7 +257,20 @@ impl Response {
             }
 
             let field_value = field_value.clone().unwrap();
-            string += format!("{}: {}\n", field_name.to_uppercase().replace("_", "-"), field_value).as_str();
+            
+            let field_name = field_name
+                .split("_")
+                .map(|part| {
+                    let mut chars = part.chars();
+
+                    let first_char = chars.nth(0).unwrap();
+
+                    return format!("{}{}", first_char.to_uppercase(), chars.collect::<String>());
+                })
+                .collect::<Vec<String>>()
+                .join("-");
+
+            string += format!("{}: {}\n", field_name, field_value).as_str();
         }
         
         return string;
