@@ -1,7 +1,10 @@
-use std::{collections::HashMap, error::Error, ops::{Index, IndexMut}};
+use std::{collections::{HashMap, VecDeque}, error::Error, ops::{Index, IndexMut}};
 
 
 pub struct Response {
+    pub version: Option<String>,
+    pub status_code: Option<String>,
+    pub reason: Option<String>,
     pub accept_patch: Option<String>,
     pub accept_ranges: Option<String>,
     pub age: Option<String>,
@@ -47,6 +50,9 @@ impl Index<&str> for Response {
 
     fn index(&self, index: &str) -> &Self::Output {
         return match index {
+            "version" => &self.version,
+            "status_code" => &self.status_code,
+            "reason" => &self.reason,
             "accept_patch" => &self.accept_patch,
             "accept_ranges" => &self.accept_ranges,
             "age" => &self.age,
@@ -93,6 +99,9 @@ impl Index<&str> for Response {
 impl IndexMut<&str> for Response {
     fn index_mut(&mut self, index: &str) -> &mut Self::Output {
         return match index {
+            "version" => &mut self.version,
+            "status_code" => &mut self.status_code,
+            "reason" => &mut self.reason,
             "accept_patch" => &mut self.accept_patch,
             "accept_ranges" => &mut self.accept_ranges,
             "age" => &mut self.age,
@@ -138,9 +147,31 @@ impl IndexMut<&str> for Response {
 
 impl Response {
     pub fn from_string(string: String) -> Result<Self, Box<dyn Error>> {
-        let rows = string.lines();
+        let mut rows = string.lines();
+        let first_row = rows.nth(0);
+
+        if first_row.is_none() {
+            return Err("Invalid request.".into());
+        }
+        let first_row = first_row.unwrap();
+
+        let rows = rows.skip(1);
+
+        let columns = first_row
+            .split(' ')
+            .collect::<Vec<&str>>();
+
+        if columns.len() < 3 {
+            return Err("Invalid request.".into());
+        }
+
+        let mut columns = VecDeque::from_iter(columns);
 
         let mut response_data = Response {
+            // the version is first column of the status-line, status code the second and everything left is a reason.
+            version: Some(columns.pop_front().unwrap().to_string()),
+            status_code: Some(columns.pop_front().unwrap().to_string()),
+            reason: Some(Vec::from(columns).join(" ")),
             accept_patch: None,
             accept_ranges: None,
             age: None,
