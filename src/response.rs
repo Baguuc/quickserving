@@ -1,6 +1,9 @@
 use std::{collections::{HashMap, VecDeque}, error::Error, ops::{Index, IndexMut}};
 
+use crate::lib::append_field_names;
 
+
+append_field_names!(
 pub struct Response {
     pub version: Option<String>,
     pub status_code: Option<String>,
@@ -43,6 +46,7 @@ pub struct Response {
     pub warning: Option<String>,
     pub www_authenticate: Option<String>
 }
+);
 
 
 impl Index<&str> for Response {
@@ -229,5 +233,28 @@ impl Response {
         }
 
         return Ok(response_data);
+    }
+
+
+    pub fn to_string(&self) -> String {
+        let mut string = format!(
+            "{} {} {}\n",
+            self.version.clone().unwrap(),
+            self.status_code.clone().unwrap(),
+            self.reason.clone().unwrap()
+        );
+
+        for field_name in Self::field_names() {
+            let field_value = &self[*field_name];
+
+            if field_value.is_none() {
+                continue;
+            }
+
+            let field_value = field_value.clone().unwrap();
+            string += format!("{}: {}\n", field_name.to_uppercase().replace("_", "-"), field_value).as_str();
+        }
+        
+        return string;
     }
 }
