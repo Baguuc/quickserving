@@ -1,10 +1,11 @@
-use std::{collections::{HashMap, VecDeque}, error::Error, ops::{Index, IndexMut}};
+use std::{collections::VecDeque, error::Error, ops::{Index, IndexMut}};
 
 use crate::lib::append_field_names;
 
 
 append_field_names!(
 pub struct Response {
+    pub content: Option<String>,
     pub version: Option<String>,
     pub status_code: Option<String>,
     pub reason: Option<String>,
@@ -54,6 +55,7 @@ impl Index<&str> for Response {
 
     fn index(&self, index: &str) -> &Self::Output {
         return match index {
+            "content" => &self.content,
             "version" => &self.version,
             "status_code" => &self.status_code,
             "reason" => &self.reason,
@@ -103,6 +105,7 @@ impl Index<&str> for Response {
 impl IndexMut<&str> for Response {
     fn index_mut(&mut self, index: &str) -> &mut Self::Output {
         return match index {
+            "content" => &mut self.content,
             "version" => &mut self.version,
             "status_code" => &mut self.status_code,
             "reason" => &mut self.reason,
@@ -169,8 +172,19 @@ impl Response {
 
         let mut columns = VecDeque::from_iter(columns);
 
+        let rows = string
+            .split("\r\n")
+            .collect::<Vec<&str>>();
+
+        if rows.len() < 2 {
+            return Err("Invalid request.".into());
+        }
+
+        let content = rows.get(1).unwrap();
+
         let mut response_data = Response {
             // the version is first column of the status-line, status code the second and everything left is a reason.
+            content: Some(content.to_string()),
             version: Some(columns.pop_front().unwrap().to_string()),
             status_code: Some(columns.pop_front().unwrap().to_string()),
             reason: Some(Vec::from(columns).join(" ")),
@@ -274,6 +288,8 @@ impl Response {
 
             string += format!("{}: {}\n", field_name, field_value).as_str();
         }
+
+        let string = format!("{}\r\n{}", string, self.content.clone().unwrap());
         
         return string;
     }
@@ -283,6 +299,7 @@ impl Response {
 impl Default for Response {
     fn default() -> Self {
         return Self {
+            content: None,
             version: None,
             status_code: None,
             reason: None,
