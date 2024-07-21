@@ -1,6 +1,8 @@
 use std::{collections::HashMap, error::Error, ops::{Index, IndexMut}};
+use crate::lib::append_field_names;
 
 
+append_field_names!(
 pub struct Request {
     pub method: Option<String>,
     pub path: Option<String>,
@@ -44,6 +46,7 @@ pub struct Request {
     pub x_requested_with: Option<String>,
     pub x_csrf_token: Option<String>
 }
+);
 
 
 impl Index<&str> for Request {
@@ -229,5 +232,28 @@ impl Request {
         }
 
         return Ok(request_data);
+    }
+
+    
+    pub fn to_string(&self) -> String {
+        let mut string = format!(
+            "{} {} {}\n",
+            self.method.clone().unwrap(),
+            self.path.clone().unwrap(),
+            self.version.clone().unwrap()
+        );
+
+        for field_name in Self::field_names() {
+            let field_value = &self[*field_name];
+
+            if field_value.is_none() {
+                continue;
+            }
+
+            let field_value = field_value.clone().unwrap();
+            string += format!("{}: {}\n", field_name.to_uppercase().replace("_", "-"), field_value).as_str();
+        }
+        
+        return string;
     }
 }
