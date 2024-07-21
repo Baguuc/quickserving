@@ -160,9 +160,7 @@ impl Request {
             return Err("Invalid request.".into());
         }
         let first_row = first_row.unwrap();
-
-        let rows = rows.skip(1);
-
+        
         let columns = first_row
             .split(' ')
             .collect::<Vec<&str>>();
