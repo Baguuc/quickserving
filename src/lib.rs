@@ -1,13 +1,14 @@
 pub mod config;
 pub mod request;
 pub mod response;
+pub mod server;
 
 
 mod lib {
     macro_rules! append_field_names {
         (pub struct $name:ident { $(pub $fname:ident : $ftype:ty),* }) => {
             pub struct $name {
-                pub $($fname : $ftype),*
+                $(pub $fname : $ftype),*
             }
     
             impl $name {
