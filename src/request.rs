@@ -276,3 +276,52 @@ impl Request {
         return string;
     }
 }
+
+
+impl Default for Request {
+    fn default() -> Self {
+        return Self {
+            method: None,
+            path: None,
+            version: None,
+            a_im: None,
+            accept: None,
+            accept_charset: None,
+            accept_encoding: None,
+            accept_language: None,
+            accept_datetime: None,
+            access_control_request_method: None,
+            access_control_request_headers: None,
+            authorization: None,
+            cache_control: None,
+            connection: None,
+            content_length: None,
+            content_type: None,
+            cookie: None,
+            date: None,
+            expect: None,
+            forwarded: None,
+            from: None,
+            host: None,
+            if_match: None,
+            if_modified_since: None,
+            if_none_match: None,
+            if_range: None,
+            if_unmodified_since: None,
+            max_forwards: None,
+            origin: None,
+            pragma: None,
+            proxy_authorization: None,
+            range: None,
+            referer: None,
+            te: None,
+            user_agent: None,
+            upgrade: None,
+            via: None,
+            warning: None,
+            dnt: None,
+            x_requested_with: None,
+            x_csrf_token: None,
+        };
+    }
+}
