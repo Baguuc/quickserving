@@ -225,7 +225,7 @@ impl Request {
             let key = split.get(0).unwrap();
             let value = split.get(1).unwrap();
 
-            request_data[key] = Some(value.to_string());
+            request_data[key.to_lowercase().replace("-", "_").as_str()] = Some(value.to_string());
         }
 
         return Ok(request_data);

@@ -194,7 +194,7 @@ impl Response {
             let value = split.get(1).unwrap();
 
 
-            response_data[key] = Some(value.to_string());
+            response_data[key.to_lowercase().replace("-", "_").as_str()] = Some(value.to_string());
         }
 
         return Ok(response_data);
