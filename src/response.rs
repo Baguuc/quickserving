@@ -278,3 +278,51 @@ impl Response {
         return string;
     }
 }
+
+
+impl Default for Response {
+    fn default() -> Self {
+        return Self {
+            version: None,
+            status_code: None,
+            reason: None,
+            accept_patch: None,
+            accept_ranges: None,
+            age: None,
+            allow: None,
+            alt_svc: None,
+            cache_control: None,
+            connection: None,
+            content_disposition: None,
+            content_encoding: None,
+            content_language: None,
+            content_length: None,
+            content_location: None,
+            content_range: None,
+            content_type: None,
+            date: None,
+            delta_base: None,
+            etag: None,
+            expires: None,
+            im: None,
+            last_modified: None,
+            link: None,
+            location: None,
+            pragma: None,
+            proxy_authenticate: None,
+            public_key_pins: None,
+            retry_after: None,
+            server: None,
+            set_cookie: None,
+            strict_transport_security: None,
+            trailer: None,
+            transfer_encoding: None,
+            tk: None,
+            upgrade: None,
+            vary: None,
+            via: None,
+            warning: None,
+            www_authenticate: None,
+        };
+    }
+}
