@@ -78,13 +78,19 @@ fn handle_connection(mut stream: TcpStream, config: &Config) -> Result<(), Box<d
         request.path.clone().unwrap()
     );
 
-    let resource_path = format!("{}/{}", config.directory, request.path.clone().unwrap());
-
+    let resource_path = format!(
+        "{}/{}",
+        config.directory.trim_end_matches("/"),
+        request.path.clone().unwrap()
+    );
     let resource_content = fs::read_to_string(resource_path);
 
     let response = if resource_content.is_err() {
-        // TODO: implement 404 page
-        let resource_content = fs::read_to_string(&config.not_found_uri).unwrap_or("404".to_string());
+        let resource_content = fs::read_to_string(format!(
+            "{}/{}", 
+            &config.directory.trim_end_matches('/'),
+            &config.not_found_uri
+        )).unwrap_or("404".to_string());
         let resource_len = resource_content.len();
         
         Response {
