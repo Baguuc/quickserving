@@ -262,7 +262,7 @@ impl Response {
         
 
         for field_name in Self::field_names() {
-            if vec!["version", "status_code", "reason"].contains(field_name) {
+            if vec!["version", "status_code", "reason", "content"].contains(field_name) {
                 continue;
             }
 
