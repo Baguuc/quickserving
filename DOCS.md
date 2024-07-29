@@ -6,6 +6,7 @@
   - port (field) - represents the port that will be used to launch the HTTP server on.
   - directory (field) - represents the root directory that contains the files to serve.
   - index_file (field) - represents the file that will be read from requested path when user requests url ending with '/'.
+  - not_found_file (field) - represents file that will be served when the file requested by user is not avaible.
 
 - quickserving-core::request::Request (struct)
   It represents a HTTP request.

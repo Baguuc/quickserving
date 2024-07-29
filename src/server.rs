@@ -84,7 +84,7 @@ fn handle_connection(mut stream: TcpStream, config: &Config) -> Result<(), Box<d
 
     let response = if resource_content.is_err() {
         // TODO: implement 404 page
-        let resource_content = "404".to_string();
+        let resource_content = fs::read_to_string(&config.not_found_uri).unwrap_or("404".to_string());
         let resource_len = resource_content.len();
         
         Response {
