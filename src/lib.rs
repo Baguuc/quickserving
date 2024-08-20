@@ -68,3 +68,26 @@ impl ToString for Headers {
         return formatted
     }
 }
+
+
+pub struct Version {
+    name: String,
+    version: String
+}
+
+
+impl Version {
+    pub fn new(name: String, version: String) -> Self {
+        return Self {
+            name,
+            version
+        };
+    }
+}
+
+
+impl ToString for Version {
+    fn to_string(&self) -> String {
+        return format!("{}/{}", self.name, self.version).to_string();
+    }
+}
