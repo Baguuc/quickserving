@@ -68,20 +68,19 @@ fn handle_connection(mut stream: TcpStream, config: &Config) -> Result<(), Box<d
 
     let mut request = request.unwrap();
 
-    if request.path.clone().unwrap().ends_with("/") {
-        request.path = Some(format!("{}{}", request.path.unwrap(), config.index_file).to_string());
+    if request.path.ends_with("/") {
+        request.path = format!("{}{}", request.path, config.index_file).to_string();
     }
     
     info!(
-        "{} requested path {}.",
-        if request.user_agent.is_some() { request.user_agent.unwrap() } else { "User".to_string() },
-        request.path.clone().unwrap()
+        "Requested path {}.",
+        request.path
     );
 
     let resource_path = format!(
         "{}/{}",
         config.directory.trim_end_matches("/"),
-        request.path.clone().unwrap()
+        request.path
     );
     let resource_content = fs::read_to_string(resource_path);
 
@@ -110,7 +109,7 @@ fn handle_connection(mut stream: TcpStream, config: &Config) -> Result<(), Box<d
 
         Response {
             content: Some(resource_content),
-            content_type: Some(mime_guess::from_path(request.path.unwrap()).first().unwrap().to_string()),
+            content_type: Some(mime_guess::from_path(request.path).first().unwrap().to_string()),
             content_length: Some(resource_len.to_string()),
             version: Some("HTTP/1.1".to_string()),
             status_code: Some("200".to_string()),
