@@ -42,12 +42,20 @@ impl Headers {
         let key_formatted = 
             if key.contains("-") {
                 key.split("-")
-                    .map(|word| word.to_uppercase().chars().skip(1).collect::<String>())
+                    .map(|word| {
+                        let first_char = word.chars().take(1).collect::<String>().to_uppercase();
+                        let other_chars = word.chars().skip(1).collect::<String>().to_lowercase();
+
+                        format!("{}{}", first_char, other_chars)
+                    })
                     .collect::<Vec<String>>()
                     .join("-")
 
             } else {
-                key.to_uppercase().chars().skip(1).collect::<String>()
+                let first_char = key.chars().take(1).collect::<String>().to_uppercase();
+                let other_chars = key.chars().skip(1).collect::<String>().to_lowercase();
+
+                format!("{}{}", first_char, other_chars)
             };
 
         let _ = self.0.insert(key_formatted, value);

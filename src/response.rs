@@ -103,7 +103,7 @@ impl Response {
                 continue;
             }
 
-            let key = split.get(0).unwrap().to_lowercase().replace("-", "_");
+            let key = split.get(0).unwrap().to_string();
             let value = split.get(1).unwrap().to_string();
 
             headers.insert(&key, value);
