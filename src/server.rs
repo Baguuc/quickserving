@@ -3,7 +3,7 @@ use std::{error::Error, fs, io::{Read, Write}, net::{TcpListener, TcpStream}};
 use chrono::Utc;
 use log::{info, warn};
 
-use crate::{config::Config, request::{self, Request}, response::Response};
+use crate::{config::Config, request::{self, Request}, response::Response, Headers, Version};
 
 pub fn listen(config: Config) -> Result<(), Box<dyn Error>> {
     // we bind our listener to port from config
@@ -92,32 +92,66 @@ fn handle_connection(mut stream: TcpStream, config: &Config) -> Result<(), Box<d
         )).unwrap_or("404".to_string());
         let resource_len = resource_content.len();
         
-        Response {
-            content: Some(resource_content),
-            content_type: Some("text/html".to_string()),
-            content_length: Some(resource_len.to_string()),
-            version: Some("HTTP/1.1".to_string()),
-            status_code: Some("404".to_string()),
-            reason: Some("Resource not found".to_string()),
-            server: Some("Quickserving".to_string()),
-            accept_patch: None,
-            ..Default::default()
-        }
+        let mut headers = Headers::new();
+
+        headers.insert(
+            &"Content-Type".to_string(), 
+            "text/html".to_string()
+        );
+        headers.insert(
+            &"Content-Lenght".to_string(), 
+            resource_len.to_string()
+        );
+        headers.insert(
+            &"Server".to_string(), 
+            "Quickserving".to_string()
+        );
+
+    
+        Response::new(
+            404, 
+            "Resource not found".to_string(),
+            Version::new(
+                "HTTP".to_string(),
+                "1.1".to_string()
+            ),
+            headers,
+            resource_content
+        )
     } else {
         let resource_content = resource_content.unwrap();
         let resource_len = resource_content.len();
 
-        Response {
-            content: Some(resource_content),
-            content_type: Some(mime_guess::from_path(request.path).first().unwrap().to_string()),
-            content_length: Some(resource_len.to_string()),
-            version: Some("HTTP/1.1".to_string()),
-            status_code: Some("200".to_string()),
-            reason: Some("OK".to_string()),
-            server: Some("Quickserving".to_string()),
-            date: Some(Utc::now().to_string()),
-            ..Default::default()
-        }
+        let mut headers = Headers::new();
+
+        headers.insert(
+            &"Content-Type".to_string(), 
+            mime_guess::from_path(request.path).first().unwrap().to_string()
+        );
+        headers.insert(
+            &"Content-Lenght".to_string(), 
+            resource_len.to_string()
+        );
+        headers.insert(
+            &"Server".to_string(), 
+            "Quickserving".to_string()
+        );
+        headers.insert(
+            &"Date".to_string(), 
+            Utc::now().to_string()
+        );
+
+    
+        Response::new(
+            200, 
+            "OK".to_string(),
+            Version::new(
+                "HTTP".to_string(),
+                "1.1".to_string()
+            ),
+            headers,
+            resource_content
+        )
     };
 
     let response_string = response.to_string();
