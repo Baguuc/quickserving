@@ -7,7 +7,7 @@ Core library for other quickserving apps.
 Add quickserving-core to Cargo.toml as a dependency:
 
 ```TOML
-quickserving-core = { git = "https://github.com/quickserving/quickserving-core.git" }
+quickserving-core = { git = "https://github.com/Baguuc/quickserving-core.git" }
 ```
 
 ## Docs
