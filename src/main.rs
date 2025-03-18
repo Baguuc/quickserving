@@ -1,44 +1,48 @@
-use clap::Parser;
+use std::{fs::File, io::Read};
+
 use log::error;
 use quickserving_core::http::server::Server;
+use serde_json::Value;
 use simple_logger::SimpleLogger;
 
-#[derive(Parser, Debug, Clone)]
-#[command(version, about = "A simple HTTP server.")]
-struct CLIConfig {
-    #[arg(
-        long,
-        default_value = "8080",
-        help = "The port that server will be listening for requests on."
-    )]
-    port: u16,
-    #[arg(long, default_value = ".", help = "The directory that will be served.")]
-    directory: String,
-    #[arg(
-        long,
-        default_value = "index.html",
-        help = "The file that will be read from requested path when user requests url ending with '/'."
-    )]
-    index: String,
-    #[arg(
-        long,
-        default_value = "404.html",
-        help = "The file that will be served when the file requested by user is not avaible."
-    )]
-    not_found: String,
-}
 
 fn main() {
     let _ = SimpleLogger::new().init();
 
-    let cli_config = CLIConfig::parse();
-
-    let server = Server {
-        port: cli_config.port,
-        directory: cli_config.directory,
-        index_file: cli_config.index,
-        not_found_uri: cli_config.not_found,
+    let config_file_result = File::options()
+        .read(true)
+        .create(false)
+        .write(false)
+        .append(false)
+        .truncate(false)
+        .open("./quickserving.json");
+    let mut config_file = match config_file_result {
+        Ok(file) => file,
+        Err(_) => {
+            println!("Cannot read config file \"quickserving.json\", file not found.");
+            return;
+        }
     };
+    let mut config_str = String::new();
+    let read_result = config_file.read_to_string(&mut config_str);
+
+    match read_result {
+        Ok(_) => (),
+        Err(_) => {
+            println!("Cannot read config file \"quickserving.json\", insufficient permissions.");
+            return;
+        }
+    }
+
+    let config_json = match serde_json::from_str::<Value>(config_str.as_str()) {
+        Ok(json) => json,
+        Err(_) => {
+            println!("Cannot read config file \"quickserving.json\", invalid json format.");
+            return;
+        }
+    };
+
+    let server: Server = config_json.into();
     let setup_result = server.listen();
 
     if setup_result.is_err() {
