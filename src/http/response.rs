@@ -1,28 +1,35 @@
-use std::{collections::VecDeque, error::Error, ops::{Index, IndexMut}};
+use std::{
+    collections::VecDeque,
+    error::Error,
+    ops::{Index, IndexMut},
+};
 
-use crate::{lib::append_field_names, Headers, Version};
-
+use crate::http::{Headers, Version};
 
 pub struct Response {
     status_code: u16,
     reason: String,
     version: Version,
     headers: Headers,
-    body: String
+    body: String,
 }
 
-
 impl Response {
-    pub fn new(status_code: u16, reason: String, version: Version, headers: Headers, body: String) -> Self {
+    pub fn new(
+        status_code: u16,
+        reason: String,
+        version: Version,
+        headers: Headers,
+        body: String,
+    ) -> Self {
         return Self {
             status_code,
             reason,
             version,
             headers,
-            body
+            body,
         };
     }
-
 
     pub fn from_string(string: String) -> Result<Self, Box<dyn Error>> {
         let mut rows = string.lines();
@@ -33,32 +40,22 @@ impl Response {
         }
 
         let first_row = first_row.unwrap();
-        
-        let columns = first_row
-            .split(' ')
-            .collect::<Vec<&str>>();
+
+        let columns = first_row.split(' ').collect::<Vec<&str>>();
 
         if columns.len() < 3 {
             return Err("Invalid request.".into());
         }
 
-        let version_str = columns
-            .get(0)
-            .unwrap()
-            .to_string();
+        let version_str = columns.get(0).unwrap().to_string();
 
-        let version_split = version_str
-            .split("/")
-            .collect::<Vec<&str>>();
+        let version_split = version_str.split("/").collect::<Vec<&str>>();
 
         if version_split.len() < 2 {
             return Err("Invalid request.".into());
         }
 
-        let status_code = columns
-            .get(1)
-            .unwrap()
-            .parse::<u16>();
+        let status_code = columns.get(1).unwrap().parse::<u16>();
 
         if status_code.is_err() {
             return Err("Invalid request.".into());
@@ -66,38 +63,22 @@ impl Response {
 
         let status_code = status_code.unwrap();
 
-        let reason = columns
-            .get(2)
-            .unwrap()
-            .to_string();
+        let reason = columns.get(2).unwrap().to_string();
 
         let version = Version::new(
-            version_split
-                .get(0)
-                .unwrap()
-                .to_string(),
-            version_split
-                .get(1)
-                .unwrap()
-                .to_string()
+            version_split.get(0).unwrap().to_string(),
+            version_split.get(1).unwrap().to_string(),
         );
 
         let mut headers = Headers::new();
         let mut body = String::new();
 
-        let request_parts = string
-            .split("\r\n")
-            .collect::<Vec<&str>>();
+        let request_parts = string.split("\r\n").collect::<Vec<&str>>();
 
-        let header_rows = request_parts
-            .get(0)
-            .unwrap_or(&"")
-            .lines();
+        let header_rows = request_parts.get(0).unwrap_or(&"").lines();
 
         for row in header_rows {
-            let split = row
-                .split(": ")
-                .collect::<Vec<&str>>();
+            let split = row.split(": ").collect::<Vec<&str>>();
 
             if split.len() < 2 {
                 continue;
@@ -109,22 +90,12 @@ impl Response {
             headers.insert(&key, value);
         }
 
-        body = request_parts
-            .get(1)
-            .unwrap_or(&"")
-            .to_string();
-        
-        let request_data = Self::new(
-            status_code,
-            reason,
-            version,
-            headers,
-            body
-        );
+        body = request_parts.get(1).unwrap_or(&"").to_string();
+
+        let request_data = Self::new(status_code, reason, version, headers, body);
 
         return Ok(request_data);
     }
-
 
     pub fn to_string(&self) -> String {
         return format!(
