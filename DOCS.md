@@ -1,31 +1,45 @@
-## Quickserving-core docs
+# Docs
+This page covers documentation about quickserving.json configuration file.
 
-- quickserving-core::config::Config (struct)
-  It represents the configuration options for the files serving.
+## Port
+The port attribute sets the port the server will try to listen on.
+Default: 3000
+Example:
+```json
+{
+  "port": 5001
+}
+```
+## Directory
+The directory attribute is used to reference the root directory all file will be searched for in.
+Default: ./ (current dir)
+Example:
+```json
+{
+  // this will be the root of the project
+  "directory": "/www/mywebsite"
+}
+```
 
-  - port (field) - represents the port that will be used to launch the HTTP server on.
-  - directory (field) - represents the root directory that contains the files to serve.
-  - index_file (field) - represents the file that will be read from requested path when user requests url ending with '/'.
-  - not_found_file (field) - represents file that will be served when the file requested by user is not avaible.
+## Index file
+The index_file attribute is used to set the alternative name to index.html file
+that will be served in automatically while requesting a path.
+Default: index.html
+Example:
+```json
+{
+  // when entering /somepath in the browser without specifying the file name
+  // the server will try to serve this file in the path
+  "index_file": "main.html"
+}
+```
 
-- quickserving-core::request::Request (struct)
-  It represents a HTTP request.
-
-  - from_string (function) - parses requests data from string
-  - to_string (function) - returns string created from data of the request
-  - Other fields are HTTP request headers
-
-- quickserving-core::response::Response (struct)
-  It represents a HTTP response.
-
-  - from_string (function) - parses response data from string
-  - to_string (function) - returns string created from data of the response
-  - Other fields are HTTP response headers
-
-[here is a list of HTTP headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers)
-
-- quickserving-core::server::listen (function) <br>
-  starts the HTTP server. <br>
-  Caution: if user requests url ending with / this function will be try to read index.html in that directory by default.
-  parameters:
-  - config: quickserving-core::config::Config
+## Not found uri
+The not_found_uri attribute sets the file that will be served when a requested file is not found (404 error)
+Default: 404.html
+Example:
+```json
+{
+  "not_found_uri": "404.html"
+}
+```
