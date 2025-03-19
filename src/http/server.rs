@@ -102,44 +102,8 @@ impl Server {
     }
 
     fn handle_connection(self: &Self, mut stream: TcpStream) -> Result<(), Box<dyn Error>> {
-        // we initialize out request buffer that we will be reading request's data into
-        let mut request_buf = [0u8; 4096];
-        // this will represent all out decoded data of request
-        let mut request = String::new();
-
-        // as because we cannot simply read the entire request from the network i/o
-        // we read the bytes of it in chunks, sequentially
-        loop {
-            let bytes_read = stream.read(&mut request_buf).unwrap();
-            if bytes_read == 0 {
-                // if we had read 0 bytes it means that we read entirity of the request
-                // so we stop reading it
-                break;
-            }
-
-            // we decode the request chunk we read from network i/o
-            // and append it to out request string
-            let request_chunk = String::from_utf8_lossy(&request_buf[0..bytes_read]).to_string();
-            request.push_str(request_chunk.as_str());
-
-            // the full request has been recieved
-            if request_chunk.ends_with("\r\n\r\n") {
-                break;
-            }
-        }
-
-        // we parse our request
-        let request = Request::from_string(request);
-
-        if request.is_err() {
-            warn!(
-                "Error while parsing request. Invalid request. {}",
-                request.err().unwrap()
-            );
-            return Err("Error while parsing request. Invalid request.".into());
-        }
-
-        let mut request = request.unwrap();
+        let mut request = Request::read_from_stream(&stream)
+            .unwrap();
 
         if request.path.ends_with("/") {
             request.path = format!("{}{}", request.path, self.index_file).to_string();

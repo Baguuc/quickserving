@@ -1,9 +1,9 @@
 use crate::http::{Headers, Version};
 use std::{
-    collections::HashMap,
-    error::Error,
-    ops::{Index, IndexMut},
+    collections::HashMap, error::Error, io::Read, net::TcpStream, ops::{Index, IndexMut}
 };
+
+use super::response::Response;
 
 pub struct Request {
     pub method: String,
@@ -11,6 +11,19 @@ pub struct Request {
     pub version: Version,
     pub headers: Headers,
     pub body: String,
+}
+
+impl ToString for Request {
+    fn to_string(&self) -> String {
+        return format!(
+            "{} {} {}\n{}\r\n{}",
+            self.method,
+            self.path,
+            self.version.to_string(),
+            self.headers.to_string(),
+            self.body
+        );
+    }
 }
 
 impl Request {
@@ -90,14 +103,42 @@ impl Request {
         return Ok(request_data);
     }
 
-    pub fn to_string(&self) -> String {
-        return format!(
-            "{} {} {}\n{}\r\n{}",
-            self.method,
-            self.path,
-            self.version.to_string(),
-            self.headers.to_string(),
-            self.body
-        );
+    pub fn read_from_stream(mut stream: &TcpStream) -> Result<Self, Box<dyn Error>> {
+        // we initialize out request buffer that we will be reading request's data into
+        let mut request_buf = [0u8; 4096];
+        // this will represent all out decoded data of request
+        let mut request = String::new();
+
+        // as because we cannot simply read the entire request from the network i/o
+        // we read the bytes of it in chunks, sequentially
+        loop {
+            let bytes_read = stream.read(&mut request_buf).unwrap();
+            if bytes_read == 0 {
+                // if we had read 0 bytes it means that we read entirity of the request
+                // so we stop reading it
+                break;
+            }
+
+            // we decode the request chunk we read from network i/o
+            // and append it to out request string
+            let request_chunk = String::from_utf8_lossy(&request_buf[0..bytes_read]).to_string();
+            request.push_str(request_chunk.as_str());
+
+            // the full request has been recieved
+            if request_chunk.ends_with("\r\n\r\n") {
+                break;
+            }
+        }
+
+        // we parse our request
+        let request = Self::from_string(request);
+
+        if request.is_err() {
+            return Err("Error while parsing request. Invalid request.".into());
+        }
+
+        let request = request.unwrap();
+
+        return Ok(request);
     }
 }
