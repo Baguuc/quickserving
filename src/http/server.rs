@@ -8,6 +8,7 @@ use std::{
 
 use chrono::Utc;
 use log::{info, warn};
+use serde::{de, Deserialize};
 use serde_json::{Number, Value};
 
 use crate::http::{request::{self, Request}, response::{self, Response}, Headers, Version};
@@ -21,40 +22,23 @@ pub struct Server {
 
 impl From<Value> for Server {
     fn from(value: Value) -> Self {
+        #[derive(Deserialize)]
+        struct Deserialized {
+            port: Option<u16>,
+            directory: Option<String>,
+            index_file: Option<String>,
+            not_found_uri: Option<String>
+        }
+
+        let deserialized = serde_json::from_value::<Deserialized>(value)
+            .unwrap();
         let default = Self::default();
 
-        let port = value.get("port")
-            .unwrap_or(&Value::Number(Number::from_u128(default.port as u128).unwrap()))
-            .as_u64()
-            .unwrap();
-
-        let port = if port > (u16::MAX as u64) {
-            default.port
-        } else { 
-            port as u16
-        };
-
-        let directory = value.get("directory")
-            .unwrap_or(&Value::String(default.directory))
-            .as_str()
-            .unwrap()
-            .to_string();
-        let index_file = value.get("index_file")
-            .unwrap_or(&Value::String(default.index_file))
-            .as_str()
-            .unwrap()
-            .to_string();
-        let not_found_uri = value.get("not_found_uri")
-            .unwrap_or(&Value::String(default.not_found_uri))
-            .as_str()
-            .unwrap()
-            .to_string();
-
         return Self {
-            port,
-            directory,
-            index_file,
-            not_found_uri
+            port: deserialized.port.unwrap_or(default.port),
+            directory: deserialized.directory.unwrap_or(default.directory),
+            index_file: deserialized.index_file.unwrap_or(default.index_file),
+            not_found_uri: deserialized.not_found_uri.unwrap_or(default.not_found_uri)
         };
     }
 }
