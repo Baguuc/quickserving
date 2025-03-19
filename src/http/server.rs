@@ -10,7 +10,7 @@ use chrono::Utc;
 use log::{info, warn};
 use serde_json::{Number, Value};
 
-use crate::http::{request::Request, response::Response, Headers, Version};
+use crate::http::{request::{self, Request}, response::{self, Response}, Headers, Version};
 
 pub struct Server {
     pub port: u16,
@@ -88,87 +88,79 @@ impl Server {
         loop {
             // we read every request that the listener has recieved and try to handle it
             let (stream, _) = listener.accept().unwrap();
+            
+            let request = Request::read_from_stream(&stream)
+                .unwrap();
 
-            let handle = self.handle_connection(stream);
-
-            if handle.is_err() {
-                warn!(
-                    "Error occured while establishing connection with user. {}",
-                    handle.err().unwrap()
-                );
-                continue;
-            }
-        }
-    }
-
-    fn handle_connection(self: &Self, mut stream: TcpStream) -> Result<(), Box<dyn Error>> {
-        let mut request = Request::read_from_stream(&stream)
-            .unwrap();
-
-        if request.path.ends_with("/") {
-            request.path = format!("{}{}", request.path, self.index_file).to_string();
-        }
-
-        info!("Requested path {}.", request.path);
-
-        let resource_path = format!("{}/{}", self.directory.trim_end_matches("/"), request.path);
-        let resource_content = fs::read_to_string(resource_path);
-
-        let response = if resource_content.is_err() {
-            let resource_content = fs::read_to_string(format!(
-                "{}/{}",
-                &self.directory.trim_end_matches('/'),
-                &self.not_found_uri
-            ))
-            .unwrap_or("404".to_string());
-            let resource_len = resource_content.len();
-
-            let mut headers = Headers::new();
-
-            headers.insert(&"Content-Type".to_string(), "text/html".to_string());
-            headers.insert(&"Content-Lenght".to_string(), resource_len.to_string());
-            headers.insert(&"Server".to_string(), "Quickserving".to_string());
-
-            Response::new(
-                404,
-                "Resource not found".to_string(),
-                Version::new("HTTP".to_string(), "1.1".to_string()),
-                headers,
-                resource_content,
-            )
-        } else {
-            let resource_content = resource_content.unwrap();
-            let resource_len = resource_content.len();
-
-            let mut headers = Headers::new();
-
-            let _ = headers.insert(
-                &"Content-Type".to_string(),
-                mime_guess::from_path(request.path)
-                    .first()
-                    .unwrap()
-                    .to_string(),
+            let result = request.respond(
+                create_response,
+                &self,
+                &stream
             );
-            let _ = headers.insert(&"Content-Lenght".to_string(), resource_len.to_string());
-            let _ = headers.insert(&"Server".to_string(), "Quickserving".to_string());
-            let _ = headers.insert(&"Date".to_string(), Utc::now().to_string());
-
-            Response::new(
-                200,
-                "OK".to_string(),
-                Version::new("HTTP".to_string(), "1.1".to_string()),
-                headers,
-                resource_content,
-            )
-        };
-
-        let response_string = response.to_string();
-
-        info!("Responding with: {}", response_string);
-
-        stream.write_all(response_string.as_bytes()).unwrap();
-        stream.flush().unwrap();
-
-        return Ok(());
+        }
     }
+
+}
+
+fn create_response(server: &Server, request: &Request) -> Response {
+    let mut path = request.path.clone();
+
+    if path.ends_with("/") {
+        path = format!("{}{}", request.path, server.index_file).to_string();
+    }
+
+    info!("requested path {}.", path);
+
+    let resource_path = format!("{}/{}", server.directory.trim_end_matches("/"), path);
+    let resource_content = fs::read_to_string(resource_path);
+
+    let response = if resource_content.is_err() {
+        let resource_content = fs::read_to_string(format!(
+            "{}/{}",
+            &server.directory.trim_end_matches('/'),
+            &server.not_found_uri
+        ))
+        .unwrap_or("404".to_string());
+        let resource_len = resource_content.len();
+
+        let mut headers = Headers::new();
+
+        headers.insert(&"content-type".to_string(), "text/html".to_string());
+        headers.insert(&"content-lenght".to_string(), resource_len.to_string());
+        headers.insert(&"server".to_string(), "quickserving".to_string());
+
+        Response::new(
+            404,
+            "Resource not found".to_string(),
+            Version::new("http".to_string(), "1.1".to_string()),
+            headers,
+            resource_content,
+        )
+    } else {
+        let resource_content = resource_content.unwrap();
+        let resource_len = resource_content.len();
+
+        let mut headers = Headers::new();
+
+        let _ = headers.insert(
+            &"content-type".to_string(),
+            mime_guess::from_path(path)
+                .first()
+                .unwrap()
+                .to_string(),
+        );
+        let _ = headers.insert(&"content-lenght".to_string(), resource_len.to_string());
+        let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
+        let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
+
+        Response::new(
+            200,
+            "OK".to_string(),
+            Version::new("http".to_string(), "1.1".to_string()),
+            headers,
+            resource_content,
+        )
+    };
+
+    return response;
 }

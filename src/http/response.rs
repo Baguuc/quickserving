@@ -1,10 +1,10 @@
 use std::{
-    collections::VecDeque,
-    error::Error,
-    ops::{Index, IndexMut},
+    collections::VecDeque, error::Error, io::Write, net::TcpStream, ops::{Index, IndexMut}
 };
 
 use crate::http::{Headers, Version};
+
+use super::request::Request;
 
 pub struct Response {
     status_code: u16,

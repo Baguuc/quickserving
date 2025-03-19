@@ -1,9 +1,9 @@
 use crate::http::{Headers, Version};
 use std::{
-    collections::HashMap, error::Error, io::Read, net::TcpStream, ops::{Index, IndexMut}
+    collections::HashMap, error::Error, io::{Read, Write}, net::TcpStream, ops::{Index, IndexMut}
 };
 
-use super::response::Response;
+use super::{response::Response, server::Server};
 
 pub struct Request {
     pub method: String,
@@ -140,5 +140,16 @@ impl Request {
         let request = request.unwrap();
 
         return Ok(request);
+    }
+    
+    pub fn respond(self: &Self, create_response: fn(&Server, &Self) -> Response, server: &Server, mut stream: &TcpStream) -> Result<(), Box<dyn Error>> {
+        let response = create_response(server, self);
+        let response_string = response.to_string();
+
+        stream.write_all(response_string.as_bytes()).unwrap();
+        stream.flush().unwrap();
+
+        return Ok(());
+
     }
 }
