@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     error::Error,
-    fs,
+    fs::{self, File},
     io::{Read, Write},
     net::{TcpListener, TcpStream},
 };
@@ -13,11 +13,17 @@ use serde_json::{Number, Value};
 
 use crate::http::{request::{self, Request}, response::{self, Response}, Headers, Version};
 
+#[derive(Deserialize)]
+pub struct Route {
+    pub file: String
+}
+
 pub struct Server {
     pub port: u16,
     pub directory: String,
     pub index_file: String,
     pub not_found_uri: String,
+    pub routes: HashMap<String, Route>
 }
 
 impl From<Value> for Server {
@@ -27,7 +33,8 @@ impl From<Value> for Server {
             port: Option<u16>,
             directory: Option<String>,
             index_file: Option<String>,
-            not_found_uri: Option<String>
+            not_found_uri: Option<String>,
+            routes: Option<HashMap<String, Route>>
         }
 
         let deserialized = serde_json::from_value::<Deserialized>(value)
@@ -38,7 +45,8 @@ impl From<Value> for Server {
             port: deserialized.port.unwrap_or(default.port),
             directory: deserialized.directory.unwrap_or(default.directory),
             index_file: deserialized.index_file.unwrap_or(default.index_file),
-            not_found_uri: deserialized.not_found_uri.unwrap_or(default.not_found_uri)
+            not_found_uri: deserialized.not_found_uri.unwrap_or(default.not_found_uri),
+            routes: deserialized.routes.unwrap_or(default.routes)
         };
     }
 }
@@ -50,6 +58,7 @@ impl Default for Server {
             directory: "./".to_string(),
             index_file: "index.html".to_string(),
             not_found_uri: "404.html".to_string(),
+            routes: HashMap::new()
         };
     }
 }
@@ -87,64 +96,67 @@ impl Server {
 }
 
 fn create_response(server: &Server, request: &Request) -> Response {
-    let mut path = request.path.clone();
-
-    if path.ends_with("/") {
-        path = format!("{}{}", request.path, server.index_file).to_string();
-    }
-
-    info!("requested path {}.", path);
-
-    let resource_path = format!("{}/{}", server.directory.trim_end_matches("/"), path);
-    let resource_content = fs::read_to_string(resource_path);
-
-    let response = if resource_content.is_err() {
-        let resource_content = fs::read_to_string(format!(
-            "{}/{}",
-            &server.directory.trim_end_matches('/'),
-            &server.not_found_uri
-        ))
-        .unwrap_or("404".to_string());
-        let resource_len = resource_content.len();
-
-        let mut headers = Headers::new();
-
-        headers.insert(&"content-type".to_string(), "text/html".to_string());
-        headers.insert(&"content-lenght".to_string(), resource_len.to_string());
-        headers.insert(&"server".to_string(), "quickserving".to_string());
-
-        Response::new(
-            404,
-            "Resource not found".to_string(),
-            Version::new("http".to_string(), "1.1".to_string()),
-            headers,
-            resource_content,
-        )
+    let resource_path = if let Some(route) = server.routes.get(&request.path) {
+        format!("{}/{}", server.directory, route.file)
     } else {
-        let resource_content = resource_content.unwrap();
-        let resource_len = resource_content.len();
-
-        let mut headers = Headers::new();
-
-        let _ = headers.insert(
-            &"content-type".to_string(),
-            mime_guess::from_path(path)
-                .first()
-                .unwrap()
-                .to_string(),
-        );
-        let _ = headers.insert(&"content-lenght".to_string(), resource_len.to_string());
-        let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
-        let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
-
-        Response::new(
-            200,
-            "OK".to_string(),
-            Version::new("http".to_string(), "1.1".to_string()),
-            headers,
-            resource_content,
-        )
+        server.not_found_uri.to_string()
     };
+
+    let file_opening_result = File::options()
+        .read(true)
+        .write(false)
+        .open(&resource_path);
+    
+    let mut resource = match file_opening_result {
+        Ok(resource) => resource,
+        Err(_) => {
+            let mut headers = Headers::new();
+            let _ = headers.insert(
+                &"content-type".to_string(),
+                mime_guess::from_path(resource_path)
+                    .first()
+                    .unwrap()
+                    .to_string(),
+            );
+            let _ = headers.insert(&"content-lenght".to_string(), 3.to_string());
+            let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
+            let _ = headers.insert(&"date".to_string(), Utc::now().to_string());    
+
+            return Response::new(
+                404,
+                "Resource not found".to_string(),
+                Version::new("http".to_string(), "1.1".to_string()),
+                headers,
+                404.to_string(),
+            );
+        }
+    };
+    let mut res_buf = String::new();
+    resource.read_to_string(&mut res_buf);
+    
+    // limit mutability
+    let resource_content = res_buf;
+    let resource_len = resource_content.len();
+    
+    let mut headers = Headers::new();
+    let _ = headers.insert(
+        &"content-type".to_string(),
+        mime_guess::from_path(resource_path)
+            .first()
+            .unwrap()
+            .to_string(),
+    );
+    let _ = headers.insert(&"content-lenght".to_string(), resource_len.to_string());
+    let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
+    let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
+
+    let response = Response::new(
+        200,
+        "OK".to_string(),
+        Version::new("http".to_string(), "1.1".to_string()),
+        headers,
+        resource_content,
+    );
 
     return response;
 }
