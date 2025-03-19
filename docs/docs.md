@@ -47,7 +47,7 @@ Example:
 ## Routes (Optional)
 The routes attribute is used to defined set of routes that will be looked up to find out how to serve the resource requested by the client.
 If not set the whole application is useless.
-For details about all the attributes inside every route, check out [[ROUTES.md]]
+For details about all the attributes inside every route, check out [[routes.md]]
 Default: {}
 Example
 ```json

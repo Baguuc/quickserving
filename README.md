@@ -1,5 +1,5 @@
 ## Quickserving
-A configurable rust http folder server
+A configurable rust http server
 
 ## Installation
 
@@ -13,3 +13,6 @@ cargo build --release
 cp target/release/quickserving <your path folder>
 ```
 Replace <your path folder> with the path of one of the folders listed in your $PATH (on unix/linux) or %PATH% (on msdos/windows).
+
+## Documentation
+For all the rest of documentation check out [[docs/docs.md]]
