@@ -13,6 +13,8 @@ use serde_json::{Number, Value};
 
 use crate::http::{request::{self, Request}, response::{self, Response}, Headers, Version};
 
+use super::response::{Status, StatusCode};
+
 #[derive(Deserialize)]
 pub struct Route {
     pub file: String
@@ -123,8 +125,7 @@ fn create_response(server: &Server, request: &Request) -> Response {
             let _ = headers.insert(&"date".to_string(), Utc::now().to_string());    
 
             return Response::new(
-                404,
-                "Resource not found".to_string(),
+                StatusCode::NotFound.into(),
                 Version::new("http".to_string(), "1.1".to_string()),
                 headers,
                 404.to_string(),
@@ -151,8 +152,7 @@ fn create_response(server: &Server, request: &Request) -> Response {
     let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
 
     let response = Response::new(
-        200,
-        "OK".to_string(),
+        StatusCode::OK.into(),
         Version::new("http".to_string(), "1.1".to_string()),
         headers,
         resource_content,
