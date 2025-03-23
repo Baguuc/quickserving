@@ -98,65 +98,55 @@ impl Server {
 }
 
 fn create_response(server: &Server, request: &Request) -> Response {
-    let resource_path = if let Some(route) = server.routes.get(&request.path) {
-        format!("{}/{}", server.directory, route.file)
-    } else {
-        server.not_found_uri.to_string()
-    };
+    return create_file_response(server, request);
+}
 
-    let file_opening_result = File::options()
-        .read(true)
-        .write(false)
-        .open(&resource_path);
-    
-    let mut resource = match file_opening_result {
-        Ok(resource) => resource,
-        Err(_) => {
-            let mut headers = Headers::new();
-            let _ = headers.insert(
-                &"content-type".to_string(),
-                mime_guess::from_path(resource_path)
-                    .first()
-                    .unwrap()
-                    .to_string(),
-            );
-            let _ = headers.insert(&"content-lenght".to_string(), 3.to_string());
-            let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
-            let _ = headers.insert(&"date".to_string(), Utc::now().to_string());    
-
-            return Response::new(
-                StatusCode::NotFound.into(),
-                Version::new("http".to_string(), "1.1".to_string()),
-                headers,
-                404.to_string(),
-            );
-        }
-    };
-    let mut res_buf = String::new();
-    resource.read_to_string(&mut res_buf);
-    
-    // limit mutability
-    let resource_content = res_buf;
-    let resource_len = resource_content.len();
-    
+fn create_404_response() -> Response {
     let mut headers = Headers::new();
     let _ = headers.insert(
         &"content-type".to_string(),
-        mime_guess::from_path(resource_path)
-            .first()
-            .unwrap()
-            .to_string(),
+        "text/html".to_string()
     );
-    let _ = headers.insert(&"content-lenght".to_string(), resource_len.to_string());
     let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
     let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
+    let _ = headers.insert(&"content-lenght".to_string(), 12.to_string());
 
-    let response = Response::new(
+    return Response::new(
+        StatusCode::NotFound.into(),
+        Version::new("http".to_string(), "1.1".to_string()),
+        headers,
+        "<h1>404</h1>".to_string(),
+    );
+}
+
+fn create_file_response(server: &Server, request: &Request) -> Response {
+    let path = match server.routes.get(&request.path) {
+        Some(route) => &route.file,
+        None => return create_404_response()
+    };
+    let resource = match File::open(&path) {
+        Ok(mut file) => {
+            let mut buffer = String::new();
+            let _ = file.read_to_string(&mut buffer);
+        
+            buffer
+        },
+        Err(_) => return create_404_response()
+    };
+
+    let mut headers = Headers::new();
+    let _ = headers.insert(
+        &"content-type".to_string(),
+        "text/html".to_string()
+    );
+    let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
+    let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
+    let _ = headers.insert(&"content-lenght".to_string(), resource.len().to_string());
+
+    return Response::new(
         StatusCode::OK.into(),
         Version::new("http".to_string(), "1.1".to_string()),
         headers,
-        resource_content,
+        resource,
     );
-
-    return response;
 }

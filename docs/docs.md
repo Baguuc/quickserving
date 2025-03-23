@@ -34,16 +34,6 @@ Example:
 }
 ```
 
-## Not found uri (Optional)
-The not_found_uri attribute sets the file that will be served when a requested file is not found (404 error)
-Default: 404.html
-Example:
-```json
-{
-  "not_found_uri": "404.html"
-}
-```
-
 ## Routes (Optional)
 The routes attribute is used to defined set of routes that will be looked up to find out how to serve the resource requested by the client.
 If not set the whole application is useless.
