@@ -5,7 +5,7 @@ This page covers documentation about quickserving.json configuration file.
 The port attribute sets the port the server will try to listen on.
 Default: 3000
 Example:
-```json
+```js
 {
   "port": 5001
 }
@@ -14,7 +14,7 @@ Example:
 The directory attribute is used to reference the root directory all file will be searched for in.
 Default: ./ (current dir)
 Example:
-```json
+```js
 {
   // this will be the root of the project
   "directory": "/www/mywebsite"
@@ -26,7 +26,7 @@ The index_file attribute is used to set the alternative name to index.html file
 that will be served in automatically while requesting a path.
 Default: index.html
 Example:
-```json
+```js
 {
   // when entering /somepath in the browser without specifying the file name
   // the server will try to serve this file in the path
@@ -37,16 +37,19 @@ Example:
 ## Routes (Optional)
 The routes attribute is used to defined set of routes that will be looked up to find out how to serve the resource requested by the client.
 If not set the whole application is useless.
-For details about all the attributes inside every route, check out [[routes.md]]
+For details about all the attributes inside every route, check out [routes.md](routes.md)
 Default: {}
 Example
-```json
+```js
 {
   "routes": {
     // this will result in looking for {directory attribute value}/index.html
     // if the client requests the "/" path
     // for example ./index.html or ./somesetdir/index.html etc.
-    "/": "index.html"
+    "/": {
+      "type": "text",
+      "source": "index.html"
+    }
   }
 }
 ```

@@ -15,4 +15,4 @@ cp target/release/quickserving <your path folder>
 Replace <your path folder> with the path of one of the folders listed in your $PATH (on unix/linux) or %PATH% (on msdos/windows).
 
 ## Documentation
-For all the rest of documentation check out [[docs/docs.md]]
+For all the rest of documentation check out [docs.md](docs/docs.md)
