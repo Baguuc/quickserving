@@ -15,9 +15,27 @@ use crate::http::{request::{self, Request}, response::{self, Response}, Headers,
 
 use super::response::{Status, StatusCode};
 
+/**
+#[derive(Deserialize)]
+pub enum RouteServeType {
+    File,
+    Text
+}
+
 #[derive(Deserialize)]
 pub struct Route {
-    pub file: String
+    #[serde(rename = "type")]
+    pub _type: RouteServeType,
+    pub file: Option<String>,
+    pub text: Option<String>
+}
+*/
+
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum Route {
+    Text { text: String },
+    File { source: String }
 }
 
 pub struct Server {
@@ -98,7 +116,19 @@ impl Server {
 }
 
 fn create_response(server: &Server, request: &Request) -> Response {
-    return create_file_response(server, request);
+    let result = server.routes.get(&request.path);
+
+    let route_info = match result {
+        Some(route_info) => route_info,
+        None => return create_404_response()
+    };
+
+    let response = match route_info {
+        Route::Text { text } => create_text_response(text),
+        Route::File { source } => create_file_response(source)
+    };
+
+    return response;
 }
 
 fn create_404_response() -> Response {
@@ -119,12 +149,8 @@ fn create_404_response() -> Response {
     );
 }
 
-fn create_file_response(server: &Server, request: &Request) -> Response {
-    let path = match server.routes.get(&request.path) {
-        Some(route) => &route.file,
-        None => return create_404_response()
-    };
-    let resource = match File::open(&path) {
+fn create_file_response(path: &String) -> Response {
+    let resource = match File::open(path) {
         Ok(mut file) => {
             let mut buffer = String::new();
             let _ = file.read_to_string(&mut buffer);
@@ -148,5 +174,23 @@ fn create_file_response(server: &Server, request: &Request) -> Response {
         Version::new("http".to_string(), "1.1".to_string()),
         headers,
         resource,
+    );
+}
+
+fn create_text_response(text: &String) -> Response {
+    let mut headers = Headers::new();
+    let _ = headers.insert(
+        &"content-type".to_string(),
+        "text/plain".to_string()
+    );
+    let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
+    let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
+    let _ = headers.insert(&"content-lenght".to_string(), text.len().to_string());
+
+    return Response::new(
+        StatusCode::OK.into(),
+        Version::new("http".to_string(), "1.1".to_string()),
+        headers,
+        text.to_string(),
     );
 }
