@@ -3,8 +3,39 @@ use std::{error::Error, io::{Read, Write}, net::TcpStream};
 
 use super::{response::Response, server::Server};
 
+pub enum Method {
+    GET,
+    HEAD,
+    OPTIONS,
+    TRACE,
+    PUT,
+    DELETE,
+    POST,
+    PATCH,
+    CONNECT
+}
+
+impl TryFrom<String> for Method {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        return match s.as_str() {
+            "GET" => Ok(Self::GET),
+            "HEAD" => Ok(Self::HEAD),
+            "OPTIONS" => Ok(Self::OPTIONS),
+            "TRACE" => Ok(Self::TRACE),
+            "PUT" => Ok(Self::PUT),
+            "DELETE" => Ok(Self::DELETE),
+            "POST" => Ok(Self::POST),
+            "PATCH" => Ok(Self::PATCH),
+            "CONNECT" => Ok(Self::CONNECT),
+            _ => Err("Wrong HTTP method".to_string())
+        };
+    }
+}
+
 pub struct Request {
-    pub method: String,
+    pub method: Method,
     pub path: String,
     pub version: Version,
     pub headers: Headers,
@@ -13,7 +44,7 @@ pub struct Request {
 
 impl Request {
     pub fn new(
-        method: String,
+        method: Method,
         path: String,
         version: Version,
         headers: Headers,
@@ -95,19 +126,20 @@ impl TryFrom<String> for Request {
             return Err("Invalid request.".into());
         }
 
-        let method = columns.get(0)
-            .unwrap()
-            .to_string();
+        let method = {
+            let s = columns.get(0).unwrap().to_string();
+
+            match Method::try_from(s) {
+                Ok(method) => method,
+                Err(err) => return Err(err.into())
+            }
+        };
         let path = columns.get(1)
             .unwrap()
             .to_string();
 
         let version = {
-            let s = match columns.get(2) {
-                Some(s) => s,
-                None => return Err("Invalid request.".into())
-            }
-            .to_string();
+            let s = columns.get(2).unwrap().to_string(); 
             
             match Version::try_from(s) {
                 Ok(version) => version,
