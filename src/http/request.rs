@@ -3,7 +3,7 @@ use std::{
     collections::HashMap, error::Error, io::{Read, Write}, net::TcpStream, ops::{Index, IndexMut}
 };
 
-use super::{response::Response, server::Server};
+use super::{response::Response, server::Server, HeaderName};
 
 pub struct Request {
     pub method: String,
@@ -90,10 +90,13 @@ impl Request {
                 continue;
             }
 
-            let key = split.get(0).unwrap().to_string();
+            let key = match HeaderName::try_from(split.get(0).unwrap().to_string()) {
+                Ok(name) => name,
+                Err(_) => continue
+            };
             let value = split.get(1).unwrap().to_string();
 
-            headers.insert(&key, value);
+            headers.insert(key, value);
         }
 
         body = request_parts.get(1).unwrap_or(&"").to_string();

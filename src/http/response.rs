@@ -2,7 +2,7 @@ use std::{
     collections::VecDeque, error::Error, io::Write, net::TcpStream, ops::{Index, IndexMut}
 };
 
-use crate::http::{Headers, Version};
+use crate::http::{Headers, HeaderName, Version};
 
 use super::request::Request;
 
@@ -476,10 +476,13 @@ impl Response {
                 continue;
             }
 
-            let key = split.get(0).unwrap().to_string();
+            let name = match HeaderName::try_from(split.get(0).unwrap().to_string()) {
+                Ok(name) => name,
+                Err(_) => continue
+            };
             let value = split.get(1).unwrap().to_string();
 
-            headers.insert(&key, value);
+            headers.insert(name, value);
         }
 
         body = request_parts.get(1).unwrap_or(&"").to_string();

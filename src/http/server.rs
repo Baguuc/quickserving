@@ -11,25 +11,9 @@ use log::{info, warn};
 use serde::{de, Deserialize};
 use serde_json::{Number, Value};
 
-use crate::http::{request::{self, Request}, response::{self, Response}, Headers, Version};
+use crate::http::{request::{self, Request}, response::{self, Response}, Headers, HeaderName, Version};
 
 use super::response::{Status, StatusCode};
-
-/**
-#[derive(Deserialize)]
-pub enum RouteServeType {
-    File,
-    Text
-}
-
-#[derive(Deserialize)]
-pub struct Route {
-    #[serde(rename = "type")]
-    pub _type: RouteServeType,
-    pub file: Option<String>,
-    pub text: Option<String>
-}
-*/
 
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -133,13 +117,10 @@ fn create_response(server: &Server, request: &Request) -> Response {
 
 fn create_404_response() -> Response {
     let mut headers = Headers::new();
-    let _ = headers.insert(
-        &"content-type".to_string(),
-        "text/html".to_string()
-    );
-    let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
-    let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
-    let _ = headers.insert(&"content-lenght".to_string(), 12.to_string());
+    let _ = headers.insert(HeaderName::ContentType, "text/html".to_string());
+    let _ = headers.insert(HeaderName::Host, "quickserving".to_string());
+    let _ = headers.insert(HeaderName::Date, Utc::now().to_string());
+    let _ = headers.insert(HeaderName::ContentLength, 12.to_string());
 
     return Response::new(
         StatusCode::NotFound.into(),
@@ -161,13 +142,10 @@ fn create_file_response(path: &String) -> Response {
     };
 
     let mut headers = Headers::new();
-    let _ = headers.insert(
-        &"content-type".to_string(),
-        "text/html".to_string()
-    );
-    let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
-    let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
-    let _ = headers.insert(&"content-lenght".to_string(), resource.len().to_string());
+    let _ = headers.insert(HeaderName::ContentType, "text/html".to_string());
+    let _ = headers.insert(HeaderName::Host, "quickserving".to_string());
+    let _ = headers.insert(HeaderName::Date, Utc::now().to_string());
+    let _ = headers.insert(HeaderName::ContentLength, resource.len().to_string());
 
     return Response::new(
         StatusCode::OK.into(),
@@ -179,13 +157,10 @@ fn create_file_response(path: &String) -> Response {
 
 fn create_text_response(text: &String) -> Response {
     let mut headers = Headers::new();
-    let _ = headers.insert(
-        &"content-type".to_string(),
-        "text/plain".to_string()
-    );
-    let _ = headers.insert(&"server".to_string(), "quickserving".to_string());
-    let _ = headers.insert(&"date".to_string(), Utc::now().to_string());
-    let _ = headers.insert(&"content-lenght".to_string(), text.len().to_string());
+    let _ = headers.insert(HeaderName::ContentType, "text/plain".to_string());
+    let _ = headers.insert(HeaderName::Host, "quickserving".to_string());
+    let _ = headers.insert(HeaderName::Date, Utc::now().to_string());
+    let _ = headers.insert(HeaderName::ContentLength, text.len().to_string());
 
     return Response::new(
         StatusCode::OK.into(),
