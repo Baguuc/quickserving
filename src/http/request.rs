@@ -1,9 +1,7 @@
 use crate::http::{Headers, Version};
-use std::{
-    collections::HashMap, error::Error, io::{Read, Write}, net::TcpStream, ops::{Index, IndexMut}
-};
+use std::{error::Error, io::{Read, Write}, net::TcpStream};
 
-use super::{response::Response, server::Server, HeaderName};
+use super::{response::Response, server::Server};
 
 pub struct Request {
     pub method: String,
@@ -11,19 +9,6 @@ pub struct Request {
     pub version: Version,
     pub headers: Headers,
     pub body: String,
-}
-
-impl ToString for Request {
-    fn to_string(&self) -> String {
-        return format!(
-            "{} {} {}\n{}\r\n{}",
-            self.method,
-            self.path,
-            self.version.to_string(),
-            self.headers.to_string(),
-            self.body
-        );
-    }
 }
 
 impl Request {
@@ -41,69 +26,6 @@ impl Request {
             headers,
             body,
         };
-    }
-
-    pub fn from_string(string: String) -> Result<Self, Box<dyn Error>> {
-        let mut rows = string.lines();
-        let first_row = rows.nth(0);
-
-        if first_row.is_none() {
-            return Err("Invalid request.".into());
-        }
-
-        let first_row = first_row.unwrap();
-
-        let columns = first_row.split(' ').collect::<Vec<&str>>();
-
-        if columns.len() < 3 {
-            return Err("Invalid request.".into());
-        }
-
-        let method = columns.get(0).unwrap().to_string();
-
-        let path = columns.get(1).unwrap().to_string();
-
-        let version_str = columns.get(2).unwrap().to_string();
-
-        let version_split = version_str.split("/").collect::<Vec<&str>>();
-
-        if version_split.len() < 2 {
-            return Err("Invalid request.".into());
-        }
-
-        let version = Version::new(
-            version_split.get(0).unwrap().to_string(),
-            version_split.get(1).unwrap().to_string(),
-        );
-
-        let mut headers = Headers::new();
-        let mut body = String::new();
-
-        let request_parts = string.split("\r\n").collect::<Vec<&str>>();
-
-        let header_rows = request_parts.get(0).unwrap_or(&"").lines();
-
-        for row in header_rows {
-            let split = row.split(": ").collect::<Vec<&str>>();
-
-            if split.len() < 2 {
-                continue;
-            }
-
-            let key = match HeaderName::try_from(split.get(0).unwrap().to_string()) {
-                Ok(name) => name,
-                Err(_) => continue
-            };
-            let value = split.get(1).unwrap().to_string();
-
-            headers.insert(key, value);
-        }
-
-        body = request_parts.get(1).unwrap_or(&"").to_string();
-
-        let request_data = Self::new(method, path, version, headers, body);
-
-        return Ok(request_data);
     }
 
     pub fn read_from_stream(mut stream: &TcpStream) -> Result<Self, Box<dyn Error>> {
@@ -134,7 +56,7 @@ impl Request {
         }
 
         // we parse our request
-        let request = Self::from_string(request);
+        let request = Self::try_from(request);
 
         if request.is_err() {
             return Err("Error while parsing request. Invalid request.".into());
@@ -147,12 +69,68 @@ impl Request {
     
     pub fn respond(self: &Self, create_response: fn(&Server, &Self) -> Response, server: &Server, mut stream: &TcpStream) -> Result<(), Box<dyn Error>> {
         let response = create_response(server, self);
-        let response_string = response.to_string();
+        let response_string: String = response.into();
 
         stream.write_all(response_string.as_bytes()).unwrap();
         stream.flush().unwrap();
 
         return Ok(());
 
+    }
+}
+
+impl TryFrom<String> for Request {
+    type Error = String;
+
+    fn try_from(string: String) -> Result<Self, Self::Error> {
+        let mut rows = string.lines();
+        let first_row = match rows.nth(0) {
+            Some(row) => row,
+            None => return Err("Invalid request.".to_string()) 
+        };
+        
+        let columns = first_row.split(' ').collect::<Vec<&str>>();
+
+        if columns.len() < 3 {
+            return Err("Invalid request.".into());
+        }
+
+        let method = columns.get(0)
+            .unwrap()
+            .to_string();
+        let path = columns.get(1)
+            .unwrap()
+            .to_string();
+
+        let version = {
+            let s = match columns.get(2) {
+                Some(s) => s,
+                None => return Err("Invalid request.".into())
+            }
+            .to_string();
+            
+            match Version::try_from(s) {
+                Ok(version) => version,
+                Err(err) => return Err(err.into())
+            }
+        };
+
+        let request_parts = string.split("\r\n").collect::<Vec<&str>>();
+
+        let headers = {
+            let s = request_parts
+                .get(0)
+                .unwrap_or(&"")
+                .to_string();
+
+            Headers::from(s)
+        };
+
+        let body = request_parts
+            .get(1)
+            .unwrap_or(&"")
+            .to_string();
+
+        return Ok(Self::new(method, path, version, headers, body));
     }
 }

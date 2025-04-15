@@ -1,19 +1,16 @@
 use std::{
     collections::HashMap,
     error::Error,
-    fs::{self, File},
-    io::{Read, Write},
-    net::{TcpListener, TcpStream},
+    fs::File,
+    io::Read,
+    net::TcpListener,
 };
-
 use chrono::Utc;
-use log::{info, warn};
-use serde::{de, Deserialize};
-use serde_json::{Number, Value};
-
-use crate::http::{request::{self, Request}, response::{self, Response}, Headers, HeaderName, Version};
-
-use super::response::{Status, StatusCode};
+use log::info;
+use serde::Deserialize;
+use serde_json::Value;
+use crate::http::{request::Request, response::Response, Headers, HeaderName, Version};
+use super::response::StatusCode;
 
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -89,7 +86,7 @@ impl Server {
             let request = Request::read_from_stream(&stream)
                 .unwrap();
 
-            let result = request.respond(
+            let _ = request.respond(
                 create_response,
                 &self,
                 &stream

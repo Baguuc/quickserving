@@ -1,10 +1,4 @@
-use std::{
-    collections::VecDeque, error::Error, io::Write, net::TcpStream, ops::{Index, IndexMut}
-};
-
-use crate::http::{Headers, HeaderName, Version};
-
-use super::request::Request;
+use crate::http::{Headers, Version};
 
 // status codes and reasons (messages) fetched from https://status.js.org
 #[derive(Clone)]
@@ -293,109 +287,6 @@ impl Into<Status> for StatusCode {
     }
 }
 
-impl TryFrom<String> for StatusCode {
-    type Error = String;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        return Ok(match value.as_str() {
-            "100" => Self::Continue,
-            "101" => Self::SwitchingProtocols,
-            "102" => Self::Processing,
-            "103" => Self::EarlyHints,
-            "200" => Self::OK,
-            "201" => Self::Created,
-            "202" => Self::Accepted,
-            "203" => Self::NonAuthoritativeInformation,
-            "204" => Self::NoContent,
-            "205" => Self::ResetContent,
-            "206" => Self::PartialContent,
-            "207" => Self::MultiStatus,
-            "208" => Self::AlreadyReported,
-            "218" => Self::Thisisfine,
-            "226" => Self::IMUsed,
-            "300" => Self::MultipleChoices,
-            "301" => Self::MovedPermanently,
-            "302" => Self::Found,
-            "303" => Self::SeeOther,
-            "304" => Self::NotModified,
-            "306" => Self::SwitchProxy,
-            "307" => Self::TemporaryRedirect,
-            "308" => Self::ResumeIncomplete,
-            "400" => Self::BadRequest,
-            "401" => Self::Unauthorized,
-            "402" => Self::PaymentRequired,
-            "403" => Self::Forbidden,
-            "404" => Self::NotFound,
-            "405" => Self::MethodNotAllowed,
-            "406" => Self::NotAcceptable,
-            "407" => Self::ProxyAuthenticationRequired,
-            "408" => Self::RequestTimeout,
-            "409" => Self::Conflict,
-            "410" => Self::Gone,
-            "411" => Self::LengthRequired,
-            "412" => Self::PreconditionFailed,
-            "413" => Self::RequestEntityTooLarge,
-            "414" => Self::RequestURITooLong,
-            "415" => Self::UnsupportedMediaType,
-            "416" => Self::RequestedRangeNotSatisfiable,
-            "417" => Self::ExpectationFailed,
-            "418" => Self::ImATeapot,
-            "419" => Self::PageExpired,
-            "420" => Self::MethodFailure,
-            "421" => Self::MisdirectedRequest,
-            "422" => Self::UnprocessableEntity,
-            "423" => Self::Locked,
-            "424" => Self::FailedDependency,
-            "426" => Self::UpgradeRequired,
-            "428" => Self::PreconditionRequired,
-            "429" => Self::TooManyRequests,
-            "431" => Self::RequestHeaderFieldsTooLarge,
-            "440" => Self::LoginTimeout,
-            "444" => Self::ConnectionClosedWithoutResponse,
-            "449" => Self::RetryWith,
-            "450" => Self::BlockedbyWindowsParentalControls,
-            "451" => Self::UnavailableForLegalReasons,
-            "494" => Self::RequestHeaderTooLarge,
-            "495" => Self::SSLCertificateError,
-            "496" => Self::SSLCertificateRequired,
-            "497" => Self::HTTPRequestSenttoHTTPSPort,
-            "498" => Self::InvalidToken,
-            "499" => Self::ClientClosedRequest,
-            "500" => Self::InternalServerError,
-            "501" => Self::NotImplemented,
-            "502" => Self::BadGateway,
-            "503" => Self::ServiceUnavailable,
-            "504" => Self::GatewayTimeout,
-            "505" => Self::HTTPVersionNotSupported,
-            "506" => Self::VariantAlsoNegotiates,
-            "507" => Self::InsufficientStorage,
-            "508" => Self::LoopDetected,
-            "509" => Self::BandwidthLimitExceeded,
-            "510" => Self::NotExtended,
-            "511" => Self::NetworkAuthenticationRequired,
-            "520" => Self::UnknownError,
-            "521" => Self::WebServerIsDown,
-            "522" => Self::ConnectionTimedOut,
-            "523" => Self::OriginIsUnreachable,
-            "524" => Self::ATimeoutOccurred,
-            "525" => Self::SSLHandshakeFailed,
-            "526" => Self::InvalidSSLCertificate,
-            "527" => Self::RailgunListenertoOriginError,
-            "530" => Self::OriginDNSError,
-            "598" => Self::NetworkReadTimeoutError,
-            _ => return Err("Invalid code".to_string())
-        });
-    }
-}
-
-impl TryFrom<u16> for StatusCode {
-   type Error = String;
-
-   fn try_from(value: u16) -> Result<Self, Self::Error> {
-       return value.to_string().try_into();
-   }
-}
-
 pub struct Status {
     status_code: u16,
     reason: String
@@ -422,77 +313,10 @@ impl Response {
             body,
         };
     }
+}
 
-    pub fn from_string(string: String) -> Result<Self, Box<dyn Error>> {
-        let mut rows = string.lines();
-        let first_row = rows.nth(0);
-
-        if first_row.is_none() {
-            return Err("Invalid request.".into());
-        }
-
-        let first_row = first_row.unwrap();
-
-        let columns = first_row.split(' ').collect::<Vec<&str>>();
-
-        if columns.len() < 3 {
-            return Err("Invalid request.".into());
-        }
-
-        let version_str = columns.get(0).unwrap().to_string();
-
-        let version_split = version_str.split("/").collect::<Vec<&str>>();
-
-        if version_split.len() < 2 {
-            return Err("Invalid request.".into());
-        }
-
-        let status_code = columns.get(1)
-            .unwrap()
-            .to_string();
-
-        let status_code = match StatusCode::try_from(status_code) {
-            Ok(status) => status,
-            Err(_) => return Err("Invalid request.".into())
-        };
-        let status = status_code.into();
-
-        let version = Version::new(
-            version_split.get(0).unwrap().to_string(),
-            version_split.get(1).unwrap().to_string(),
-        );
-
-        let mut headers = Headers::new();
-        let mut body = String::new();
-
-        let request_parts = string.split("\r\n").collect::<Vec<&str>>();
-
-        let header_rows = request_parts.get(0).unwrap_or(&"").lines();
-
-        for row in header_rows {
-            let split = row.split(": ").collect::<Vec<&str>>();
-
-            if split.len() < 2 {
-                continue;
-            }
-
-            let name = match HeaderName::try_from(split.get(0).unwrap().to_string()) {
-                Ok(name) => name,
-                Err(_) => continue
-            };
-            let value = split.get(1).unwrap().to_string();
-
-            headers.insert(name, value);
-        }
-
-        body = request_parts.get(1).unwrap_or(&"").to_string();
-
-        let request_data = Self::new(status, version, headers, body);
-
-        return Ok(request_data);
-    }
-
-    pub fn to_string(&self) -> String {
+impl Into<String> for Response {
+    fn into(self) -> String {
         return format!(
             "{} {} {}\n{}\r\n{}",
             self.version.to_string(),

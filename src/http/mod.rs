@@ -184,6 +184,32 @@ impl ToString for Headers {
     }
 }
 
+impl From<String> for Headers {
+    fn from(s: String) -> Self {
+        let mut headers = Self::new();
+        let rows = s.lines();
+        
+        for row in rows {
+            let split = row.split(": ").collect::<Vec<&str>>();
+
+            if split.len() < 2 {
+                continue;
+            }
+
+            let key = match HeaderName::try_from(split.get(0).unwrap().to_string()) {
+                Ok(name) => name,
+                Err(_) => continue
+            };
+            let value = split.get(1).unwrap().to_string();
+
+            let _ = headers.insert(key, value);
+        }
+        let headers = headers;
+
+        return headers;
+    }
+}
+
 pub struct Version {
     name: String,
     version: String,
@@ -198,5 +224,24 @@ impl Version {
 impl ToString for Version {
     fn to_string(&self) -> String {
         return format!("{}/{}", self.name, self.version).to_string();
+    }
+}
+
+impl TryFrom<String> for Version {
+    type Error = String;
+    
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        let version_split = s.split("/").collect::<Vec<&str>>();
+
+        if version_split.len() < 2 {
+            return Err("Invalid version string.".into());
+        }
+
+        let version = Version::new(
+            version_split.get(0).unwrap().to_string(),
+            version_split.get(1).unwrap().to_string()
+        );
+
+        return Ok(version);
     }
 }
