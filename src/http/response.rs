@@ -1,92 +1,178 @@
 use crate::http::{Headers, Version};
+use serde::{self, Serialize, Deserialize};
 
 // status codes and reasons (messages) fetched from https://status.js.org
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum StatusCode {
+    #[serde(rename="Continue")]
     Continue,
+    #[serde(rename="Switching Protocols")]
     SwitchingProtocols,
+    #[serde(rename="Processing")]
     Processing,
+    #[serde(rename="Early Hints")]
     EarlyHints,
+    #[serde(rename="OK")]
     OK,
+    #[serde(rename="Created")]
     Created,
+    #[serde(rename="Accepted")]
     Accepted,
+    #[serde(rename="Non Authoritative Information")]
     NonAuthoritativeInformation,
+    #[serde(rename="No Content")]
     NoContent,
+    #[serde(rename="Reset Content")]
     ResetContent,
+    #[serde(rename="Partial Content")]
     PartialContent,
+    #[serde(rename="Multi Status")]
     MultiStatus,
+    #[serde(rename="Already Reported")]
     AlreadyReported,
-    Thisisfine,
+    #[serde(rename="This is fine")]
+    ThisIsFine,
+    #[serde(rename="I'm Used")]
     IMUsed,
+    #[serde(rename="Multiple Choices")]
     MultipleChoices,
+    #[serde(rename="Moved Permanently")]
     MovedPermanently,
+    #[serde(rename="Found")]
     Found,
+    #[serde(rename="See Other")]
     SeeOther,
+    #[serde(rename="Not Modified")]
     NotModified,
+    #[serde(rename="Switch Proxy")]
     SwitchProxy,
+    #[serde(rename="Temporary Redirect")]
     TemporaryRedirect,
+    #[serde(rename="Resume Incomplete")]
     ResumeIncomplete,
+    #[serde(rename="Bad Request")]
     BadRequest,
+    #[serde(rename="Unauthorized")]
     Unauthorized,
+    #[serde(rename="Payment Required")]
     PaymentRequired,
+    #[serde(rename="Forbidden")]
     Forbidden,
+    #[serde(rename="Not Found")]
     NotFound,
+    #[serde(rename="Method Not Allowed")]
     MethodNotAllowed,
+    #[serde(rename="Not Acceptable")]
     NotAcceptable,
+    #[serde(rename="Proxy Authentication Required")]
     ProxyAuthenticationRequired,
+    #[serde(rename="Request Timeout")]
     RequestTimeout,
+    #[serde(rename="Conflict")]
     Conflict,
+    #[serde(rename="Gone")]
     Gone,
+    #[serde(rename="Length Required")]
     LengthRequired,
+    #[serde(rename="Precondition Failed")]
     PreconditionFailed,
+    #[serde(rename="Request Entity Too Large")]
     RequestEntityTooLarge,
+    #[serde(rename="Request URI Too Long")]
     RequestURITooLong,
+    #[serde(rename="Unsupported Media Type")]
     UnsupportedMediaType,
+    #[serde(rename="Requested Range Not Satisfiable")]
     RequestedRangeNotSatisfiable,
+    #[serde(rename="Expectation Failed")]
     ExpectationFailed,
+    #[serde(rename="Im A Teapot")]
     ImATeapot,
+    #[serde(rename="Page Expired")]
     PageExpired,
+    #[serde(rename="Method Failure")]
     MethodFailure,
+    #[serde(rename="Misdirected Request")]
     MisdirectedRequest,
+    #[serde(rename="Unprocessable Entity")]
     UnprocessableEntity,
+    #[serde(rename="Locked")]
     Locked,
+    #[serde(rename="Failed Dependency")]
     FailedDependency,
+    #[serde(rename="Upgrade Required")]
     UpgradeRequired,
+    #[serde(rename="Precondition Required")]
     PreconditionRequired,
+    #[serde(rename="Too Many Requests")]
     TooManyRequests,
+    #[serde(rename="Request Header Fields Too Large")]
     RequestHeaderFieldsTooLarge,
+    #[serde(rename="Login Timeout")]
     LoginTimeout,
+    #[serde(rename="Connection Closed Without Response")]
     ConnectionClosedWithoutResponse,
+    #[serde(rename="Retry With")]
     RetryWith,
+    #[serde(rename="Blockedby Windows Parental Controls")]
     BlockedbyWindowsParentalControls,
+    #[serde(rename="Unavailable For Legal Reasons")]
     UnavailableForLegalReasons,
+    #[serde(rename="Request Header Too Large")]
     RequestHeaderTooLarge,
+    #[serde(rename="SSL Certificate Error")]
     SSLCertificateError,
+    #[serde(rename="SSL Certificate Required")]
     SSLCertificateRequired,
+    #[serde(rename="HTTP Request Sentto HTTPS Port")]
     HTTPRequestSenttoHTTPSPort,
+    #[serde(rename="Invalid Token")]
     InvalidToken,
+    #[serde(rename="Client Closed Request")]
     ClientClosedRequest,
+    #[serde(rename="Internal Server Error")]
     InternalServerError,
+    #[serde(rename="Not Implemented")]
     NotImplemented,
+    #[serde(rename="Bad Gateway")]
     BadGateway,
+    #[serde(rename="Service Unavailable")]
     ServiceUnavailable,
+    #[serde(rename="Gateway Timeout")]
     GatewayTimeout,
+    #[serde(rename="HTTP Version Not Supported")]
     HTTPVersionNotSupported,
+    #[serde(rename="Variant Also Negotiates")]
     VariantAlsoNegotiates,
+    #[serde(rename="Insufficient Storage")]
     InsufficientStorage,
+    #[serde(rename="Loop Detected")]
     LoopDetected,
+    #[serde(rename="Bandwidth Limit Exceeded")]
     BandwidthLimitExceeded,
+    #[serde(rename="Not Extended")]
     NotExtended,
+    #[serde(rename="Network Authentication Required")]
     NetworkAuthenticationRequired,
+    #[serde(rename="Unknown Error")]
     UnknownError,
+    #[serde(rename="Web Server Is Down")]
     WebServerIsDown,
+    #[serde(rename="Connection Timed Out")]
     ConnectionTimedOut,
+    #[serde(rename="Origin Is Unreachable")]
     OriginIsUnreachable,
+    #[serde(rename="A Timeout Occurred")]
     ATimeoutOccurred,
+    #[serde(rename="SSL Handshake Failed")]
     SSLHandshakeFailed,
+    #[serde(rename="Invalid SSL Certificate")]
     InvalidSSLCertificate,
-    RailgunListenertoOriginError,
+    #[serde(rename="Railgun Listener to Origin Error")]
+    RailgunListenerToOriginError,
+    #[serde(rename="Origin DNS Error")]
     OriginDNSError,
+    #[serde(rename="Network Read Timeout Error")]
     NetworkReadTimeoutError
 }
 
@@ -106,7 +192,7 @@ impl Into<u16> for StatusCode {
             Self::PartialContent => 206,
             Self::MultiStatus => 207,
             Self::AlreadyReported => 208,
-            Self::Thisisfine => 218,
+            Self::ThisIsFine => 218,
             Self::IMUsed => 226,
             Self::MultipleChoices => 300,
             Self::MovedPermanently => 301,
@@ -175,121 +261,23 @@ impl Into<u16> for StatusCode {
             Self::ATimeoutOccurred => 524,
             Self::SSLHandshakeFailed => 525,
             Self::InvalidSSLCertificate => 526,
-            Self::RailgunListenertoOriginError => 527,
+            Self::RailgunListenerToOriginError => 527,
             Self::OriginDNSError => 530,
             Self::NetworkReadTimeoutError => 598
         };
     }
 }
 
-impl Into<String> for StatusCode {
-    fn into(self) -> String {
-        return match self {
-            Self::Continue => "Continue",
-            Self::SwitchingProtocols => "Switching Protocols",
-            Self::Processing => "Processing",
-            Self::EarlyHints => "Early Hints",
-            Self::OK => "OK",
-            Self::Created => "Created",
-            Self::Accepted => "Accepted",
-            Self::NonAuthoritativeInformation => "Non-Authoritative Information",
-            Self::NoContent => "No Content",
-            Self::ResetContent => "Reset Content",
-            Self::PartialContent => "Partial Content",
-            Self::MultiStatus => "Multi-Status",
-            Self::AlreadyReported => "Already Reported",
-            Self::Thisisfine => "This is fine",
-            Self::IMUsed => "IM Used",
-            Self::MultipleChoices => "Multiple Choices",
-            Self::MovedPermanently => "Moved Permanently",
-            Self::Found => "Found",
-            Self::SeeOther => "See Other",
-            Self::NotModified => "Not Modified",
-            Self::SwitchProxy => "Switch Proxy",
-            Self::TemporaryRedirect => "Temporary Redirect",
-            Self::ResumeIncomplete => "Resume Incomplete",
-            Self::BadRequest => "Bad Request",
-            Self::Unauthorized => "Unauthorized",
-            Self::PaymentRequired => "Payment Required",
-            Self::Forbidden => "Forbidden",
-            Self::NotFound => "Not Found",
-            Self::MethodNotAllowed => "Method Not Allowed",
-            Self::NotAcceptable => "Not Acceptable",
-            Self::ProxyAuthenticationRequired => "Proxy Authentication Required",
-            Self::RequestTimeout => "Request Timeout",
-            Self::Conflict => "Conflict",
-            Self::Gone => "Gone",
-            Self::LengthRequired => "Length Required",
-            Self::PreconditionFailed => "Precondition Failed",
-            Self::RequestEntityTooLarge => "Request Entity Too Large",
-            Self::RequestURITooLong => "Request-URI Too Long",
-            Self::UnsupportedMediaType => "Unsupported Media Type",
-            Self::RequestedRangeNotSatisfiable => "Requested Range Not Satisfiable",
-            Self::ExpectationFailed => "Expectation Failed",
-            Self::ImATeapot => "I'm a teapot",
-            Self::PageExpired => "Page Expired",
-            Self::MethodFailure => "Method Failure",
-            Self::MisdirectedRequest => "Misdirected Request",
-            Self::UnprocessableEntity => "Unprocessable Entity",
-            Self::Locked => "Locked",
-            Self::FailedDependency => "Failed Dependency",
-            Self::UpgradeRequired => "Upgrade Required",
-            Self::PreconditionRequired => "Precondition Required",
-            Self::TooManyRequests => "Too Many Requests",
-            Self::RequestHeaderFieldsTooLarge => "Request Header Fields Too Large",
-            Self::LoginTimeout => "Login Time-out",
-            Self::ConnectionClosedWithoutResponse => "Connection Closed Without Response",
-            Self::RetryWith => "Retry With",
-            Self::BlockedbyWindowsParentalControls => "Blocked by Windows Parental Controls",
-            Self::UnavailableForLegalReasons => "Unavailable For Legal Reasons",
-            Self::RequestHeaderTooLarge => "Request Header Too Large",
-            Self::SSLCertificateError => "SSL Certificate Error",
-            Self::SSLCertificateRequired => "SSL Certificate Required",
-            Self::HTTPRequestSenttoHTTPSPort => "HTTP Request Sent to HTTPS Port",
-            Self::InvalidToken => "Invalid Token",
-            Self::ClientClosedRequest => "Client Closed Request",
-            Self::InternalServerError => "Internal Server Error",
-            Self::NotImplemented => "Not Implemented",
-            Self::BadGateway => "Bad Gateway",
-            Self::ServiceUnavailable => "Service Unavailable",
-            Self::GatewayTimeout => "Gateway Timeout",
-            Self::HTTPVersionNotSupported => "HTTP Version Not Supported",
-            Self::VariantAlsoNegotiates => "Variant Also Negotiates",
-            Self::InsufficientStorage => "Insufficient Storage",
-            Self::LoopDetected => "Loop Detected",
-            Self::BandwidthLimitExceeded => "Bandwidth Limit Exceeded",
-            Self::NotExtended => "Not Extended",
-            Self::NetworkAuthenticationRequired => "Network Authentication Required",
-            Self::UnknownError => "Unknown Error",
-            Self::WebServerIsDown => "Web Server Is Down",
-            Self::ConnectionTimedOut => "Connection Timed Out",
-            Self::OriginIsUnreachable => "Origin Is Unreachable",
-            Self::ATimeoutOccurred => "A Timeout Occurred",
-            Self::SSLHandshakeFailed => "SSL Handshake Failed",
-            Self::InvalidSSLCertificate => "Invalid SSL Certificate",
-            Self::RailgunListenertoOriginError => "Railgun Listener to Origin Error",
-            Self::OriginDNSError => "Origin DNS Error",
-            Self::NetworkReadTimeoutError => "Network Read Timeout Error"
-        }
-        .to_string();
-    }
-}
-
 impl Into<Status> for StatusCode {
     fn into(self) -> Status {
-        let status_code = self.clone().into();
-        let reason = self.into();
-
         return Status {
-            status_code,
-            reason
+            status_code: self.into()
         };
     }
 }
 
 pub struct Status {
-    status_code: u16,
-    reason: String
+    status_code: u16
 }
 
 pub struct Response {
@@ -317,12 +305,13 @@ impl Response {
 
 impl Into<String> for Response {
     fn into(self) -> String {
+        let headers: String = self.headers.into();
+
         return format!(
-            "{} {} {}\n{}\r\n{}",
+            "{} {}\n{}\r\n{}",
             self.version.to_string(),
             self.status.status_code,
-            self.status.reason,
-            self.headers.to_string(),
+            headers,
             self.body
         );
     }

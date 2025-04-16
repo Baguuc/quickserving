@@ -7,16 +7,22 @@ use std::{
 };
 use chrono::Utc;
 use log::info;
-use serde::Deserialize;
+use serde::{self, Serialize, Deserialize};
 use serde_json::Value;
 use crate::http::{request::Request, response::Response, Headers, HeaderName, Version};
 use super::response::StatusCode;
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Route {
-    Text { text: String },
-    File { source: String }
+    Text { 
+        headers: Headers, 
+        text: String 
+    },
+    File { 
+        headers: Headers, 
+        source: String 
+    }
 }
 
 pub struct Server {
@@ -105,8 +111,8 @@ fn create_response(server: &Server, request: &Request) -> Response {
     };
 
     let response = match route_info {
-        Route::Text { text } => create_text_response(text),
-        Route::File { source } => create_file_response(source)
+        Route::Text { text, headers } => create_text_response(text, headers.clone()),
+        Route::File { source, headers } => create_file_response(source, headers.clone())
     };
 
     return response;
@@ -121,13 +127,22 @@ fn create_404_response() -> Response {
 
     return Response::new(
         StatusCode::NotFound.into(),
-        Version::new("http".to_string(), "1.1".to_string()),
+        Version::new("HTTP".to_string(), "1.1".to_string()),
         headers,
         "<h1>404</h1>".to_string(),
     );
 }
 
-fn create_file_response(path: &String) -> Response {
+fn create_text_response(text: &String, headers: Headers) -> Response {
+    return Response::new(
+        StatusCode::OK.into(),
+        Version::new("HTTP".to_string(), "1.1".to_string()),
+        headers,
+        text.to_string(),
+    );
+}
+
+fn create_file_response(path: &String, headers: Headers) -> Response {
     let resource = match File::open(path) {
         Ok(mut file) => {
             let mut buffer = String::new();
@@ -138,31 +153,14 @@ fn create_file_response(path: &String) -> Response {
         Err(_) => return create_404_response()
     };
 
-    let mut headers = Headers::new();
-    let _ = headers.insert(HeaderName::ContentType, "text/html".to_string());
-    let _ = headers.insert(HeaderName::Host, "quickserving".to_string());
-    let _ = headers.insert(HeaderName::Date, Utc::now().to_string());
+    let mut headers = headers;
+    let _ = headers.remove(HeaderName::ContentLength);
     let _ = headers.insert(HeaderName::ContentLength, resource.len().to_string());
 
     return Response::new(
         StatusCode::OK.into(),
-        Version::new("http".to_string(), "1.1".to_string()),
-        headers,
+        Version::new("HTTP".to_string(), "1.1".to_string()),
+        headers.clone(),
         resource,
-    );
-}
-
-fn create_text_response(text: &String) -> Response {
-    let mut headers = Headers::new();
-    let _ = headers.insert(HeaderName::ContentType, "text/plain".to_string());
-    let _ = headers.insert(HeaderName::Host, "quickserving".to_string());
-    let _ = headers.insert(HeaderName::Date, Utc::now().to_string());
-    let _ = headers.insert(HeaderName::ContentLength, text.len().to_string());
-
-    return Response::new(
-        StatusCode::OK.into(),
-        Version::new("http".to_string(), "1.1".to_string()),
-        headers,
-        text.to_string(),
     );
 }

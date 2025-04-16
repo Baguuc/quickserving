@@ -1,8 +1,9 @@
 use crate::http::{Headers, Version};
 use std::{error::Error, io::{Read, Write}, net::TcpStream};
-
+use serde::{self, Serialize, Deserialize};
 use super::{response::Response, server::Server};
 
+#[derive(Serialize, Deserialize)]
 pub enum Method {
     GET,
     HEAD,
@@ -19,20 +20,22 @@ impl TryFrom<String> for Method {
     type Error = String;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
-        return match s.as_str() {
-            "GET" => Ok(Self::GET),
-            "HEAD" => Ok(Self::HEAD),
-            "OPTIONS" => Ok(Self::OPTIONS),
-            "TRACE" => Ok(Self::TRACE),
-            "PUT" => Ok(Self::PUT),
-            "DELETE" => Ok(Self::DELETE),
-            "POST" => Ok(Self::POST),
-            "PATCH" => Ok(Self::PATCH),
-            "CONNECT" => Ok(Self::CONNECT),
-            _ => Err("Wrong HTTP method".to_string())
+        match serde_json::from_str(format!("\"{}\"", s).as_str()) {
+            Ok(method) => return Ok(method),
+            Err(err) => return Err(err.to_string()),
         };
     }
 }
+
+impl Into<String> for Method {
+    fn into(self) -> String {
+        return serde_json::to_string(&self)
+            .unwrap()
+            .trim_matches('"')
+            .to_string();
+    }
+}
+
 
 pub struct Request {
     pub method: Method,
@@ -127,11 +130,13 @@ impl TryFrom<String> for Request {
         }
 
         let method = {
-            let s = columns.get(0).unwrap().to_string();
+            let s = columns.get(0)
+                .unwrap()
+                .to_string();
 
             match Method::try_from(s) {
                 Ok(method) => method,
-                Err(err) => return Err(err.into())
+                Err(err) => return Err(err.to_string().into())
             }
         };
         let path = columns.get(1)

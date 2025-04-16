@@ -35,3 +35,21 @@ Example:
   }
 }
 ```
+
+## Headers
+Every route type can define HTTP headers that will be sent as part of the response.
+The Content-Length header will be overidden in file routes.
+Example:
+```js
+{
+  "routes": {
+    "/": {
+      "type": "text",
+      "text": "{ \"greet\": \"Hello, World!\"}"
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}
+```
