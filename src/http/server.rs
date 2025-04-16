@@ -9,7 +9,7 @@ use chrono::Utc;
 use log::info;
 use serde::{self, Serialize, Deserialize};
 use serde_json::Value;
-use crate::http::{request::Request, response::Response, Headers, HeaderName, Version};
+use crate::http::{request::{Request, Method}, response::Response, Headers, HeaderName, Version};
 use super::response::StatusCode;
 
 #[derive(Serialize, Deserialize)]
@@ -17,11 +17,13 @@ use super::response::StatusCode;
 pub enum Route {
     Text { 
         headers: Headers, 
-        text: String 
+        text: String,
+        methods: Vec<Method>
     },
     File { 
         headers: Headers, 
-        source: String 
+        source: String,
+        methods: Vec<Method>
     }
 }
 
@@ -111,8 +113,20 @@ fn create_response(server: &Server, request: &Request) -> Response {
     };
 
     let response = match route_info {
-        Route::Text { text, headers } => create_text_response(text, headers.clone()),
-        Route::File { source, headers } => create_file_response(source, headers.clone())
+        Route::Text { text, headers, methods } => {
+            if methods.contains(&request.method) {
+                create_text_response(text, headers.clone())
+            } else {
+                create_404_response()
+            }
+        },
+        Route::File { source, headers, methods } => {
+            if methods.contains(&request.method) {
+                create_file_response(source, headers.clone())
+            } else { 
+                create_404_response()
+            }
+        }
     };
 
     return response;

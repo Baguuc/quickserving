@@ -36,16 +36,27 @@ Example:
 }
 ```
 
+## Methods
+Every route can define what HTTP methods it allows to pass into itself.
+Example:
+```js
+{
+  "routes": {
+    "/": {
+      "methods": [ "GET" ]
+    }
+  }
+}
+```
+
 ## Headers
-Every route type can define HTTP headers that will be sent as part of the response.
+Every route can define HTTP headers that will be sent as part of the response.
 The Content-Length header will be overidden in file routes.
 Example:
 ```js
 {
   "routes": {
     "/": {
-      "type": "text",
-      "text": "{ \"greet\": \"Hello, World!\"}"
       "headers": {
         "Content-Type": "application/json"
       }

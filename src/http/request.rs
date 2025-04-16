@@ -3,7 +3,7 @@ use std::{error::Error, io::{Read, Write}, net::TcpStream};
 use serde::{self, Serialize, Deserialize};
 use super::{response::Response, server::Server};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Eq)]
 pub enum Method {
     GET,
     HEAD,
