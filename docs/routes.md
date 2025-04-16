@@ -1,8 +1,8 @@
 ## Docs
 This page covers documentation about route configuration attributes.
 
-## Overall
-Routes are split into following types, each one is described below
+# Overall
+Routes are split into following types, each one is described below.
 
 ## File route
 The file route is used for serving a specific file for a server to a client.
@@ -36,6 +36,10 @@ Example:
 }
 ```
 
+# HTTP
+Every route can define http-related rule (like returned headers, allowed methods for it etc) thru HTTP config.
+More on HTTP definitions below. 
+
 ## Methods
 Every route can define what HTTP methods it allows to pass into itself.
 Example:
@@ -43,7 +47,9 @@ Example:
 {
   "routes": {
     "/": {
-      "methods": [ "GET" ]
+      "http": {
+        "methods": [ "GET" ]
+      }
     }
   }
 }
@@ -57,8 +63,10 @@ Example:
 {
   "routes": {
     "/": {
-      "headers": {
-        "Content-Type": "application/json"
+      "http": {
+        "headers": {
+          "Content-Type": "application/json"
+        }
       }
     }
   }

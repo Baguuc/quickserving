@@ -13,17 +13,21 @@ use crate::http::{request::{Request, Method}, response::Response, Headers, Heade
 use super::response::StatusCode;
 
 #[derive(Serialize, Deserialize)]
+pub struct RouteHttpConfig {
+    headers: Headers, 
+    methods: Vec<Method> 
+}
+
+#[derive(Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Route {
     Text { 
-        headers: Headers, 
         text: String,
-        methods: Vec<Method>
+        http: RouteHttpConfig
     },
     File { 
-        headers: Headers, 
         source: String,
-        methods: Vec<Method>
+        http: RouteHttpConfig
     }
 }
 
@@ -113,26 +117,22 @@ fn create_response(server: &Server, request: &Request) -> Response {
     };
 
     let response = match route_info {
-        Route::Text { text, headers, methods } => {
-            if methods.contains(&request.method) {
-                create_text_response(text, headers.clone())
-            } else {
-                create_404_response()
-            }
-        },
-        Route::File { source, headers, methods } => {
-            if methods.contains(&request.method) {
-                create_file_response(source, headers.clone())
-            } else { 
-                create_404_response()
-            }
-        }
+        Route::Text { text, http } => create_text_response(
+            request,
+            text,
+            http
+        ),
+        Route::File { source, http } => create_file_response(
+            request,
+            source,
+            http
+        )
     };
 
     return response;
 }
 
-fn create_404_response() -> Response {
+fn create_404_response() -> Response { 
     let mut headers = Headers::new();
     let _ = headers.insert(HeaderName::ContentType, "text/html".to_string());
     let _ = headers.insert(HeaderName::Host, "quickserving".to_string());
@@ -147,16 +147,32 @@ fn create_404_response() -> Response {
     );
 }
 
-fn create_text_response(text: &String, headers: Headers) -> Response {
+fn create_text_response(
+    request: &Request, 
+    text: &String, 
+    http_config: &RouteHttpConfig
+) -> Response {
+    if !http_config.methods.contains(&request.method) {
+        return create_404_response();
+    }
+    
     return Response::new(
         StatusCode::OK.into(),
         Version::new("HTTP".to_string(), "1.1".to_string()),
-        headers,
-        text.to_string(),
+        http_config.headers.clone(),
+        text.to_string()
     );
 }
 
-fn create_file_response(path: &String, headers: Headers) -> Response {
+fn create_file_response(
+    request: &Request, 
+    path: &String, 
+    http_config: &RouteHttpConfig
+) -> Response {
+    if !http_config.methods.contains(&request.method) {
+        return create_404_response();
+    }
+
     let resource = match File::open(path) {
         Ok(mut file) => {
             let mut buffer = String::new();
@@ -167,14 +183,14 @@ fn create_file_response(path: &String, headers: Headers) -> Response {
         Err(_) => return create_404_response()
     };
 
-    let mut headers = headers;
+    let mut headers = http_config.headers.clone();
     let _ = headers.remove(HeaderName::ContentLength);
     let _ = headers.insert(HeaderName::ContentLength, resource.len().to_string());
 
     return Response::new(
         StatusCode::OK.into(),
         Version::new("HTTP".to_string(), "1.1".to_string()),
-        headers.clone(),
+        headers,
         resource,
     );
 }
