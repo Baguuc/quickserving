@@ -5,7 +5,7 @@ This page covers documentation about route configuration attributes.
 Routes are split into following types, each one is described below.
 
 ## File route
-The file route is used for serving a specific file for a server to a client.
+The file route is used for serving a specific file to the client.
 Example:
 ```js
 {
@@ -21,7 +21,7 @@ Example:
 }
 ```
 ## Text route
-Text routes are just serving provided text with text/plain mimetype.
+Text routes are just serving provided text.
 Example:
 ```js
 {

@@ -33,9 +33,6 @@ pub enum Route {
 
 pub struct Server {
     pub port: u16,
-    pub directory: String,
-    pub index_file: String,
-    pub not_found_uri: String,
     pub routes: HashMap<String, Route>
 }
 
@@ -44,9 +41,6 @@ impl From<Value> for Server {
         #[derive(Deserialize)]
         struct Deserialized {
             port: Option<u16>,
-            directory: Option<String>,
-            index_file: Option<String>,
-            not_found_uri: Option<String>,
             routes: Option<HashMap<String, Route>>
         }
 
@@ -56,9 +50,6 @@ impl From<Value> for Server {
 
         return Self {
             port: deserialized.port.unwrap_or(default.port),
-            directory: deserialized.directory.unwrap_or(default.directory),
-            index_file: deserialized.index_file.unwrap_or(default.index_file),
-            not_found_uri: deserialized.not_found_uri.unwrap_or(default.not_found_uri),
             routes: deserialized.routes.unwrap_or(default.routes)
         };
     }
@@ -68,9 +59,6 @@ impl Default for Server {
     fn default() -> Self {
         return Self {
             port: 3000,
-            directory: "./".to_string(),
-            index_file: "index.html".to_string(),
-            not_found_uri: "404.html".to_string(),
             routes: HashMap::new()
         };
     }
@@ -88,8 +76,8 @@ impl Server {
         let listener = listener.unwrap();
 
         info!(
-            "Serving directory {} on port {}.",
-            self.directory, self.port
+            "Serving on port {}.",
+            self.port
         );
         loop {
             // we read every request that the listener has recieved and try to handle it
