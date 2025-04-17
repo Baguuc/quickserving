@@ -6,10 +6,9 @@ use std::{
     net::TcpListener,
 };
 use chrono::Utc;
-use log::info;
 use serde::{self, Serialize, Deserialize};
 use serde_json::Value;
-use crate::http::{request::{Request, Method}, response::Response, Headers, HeaderName, Version};
+use crate::{logging::{LogLevel, log}, http::{request::{Request, Method}, response::Response, Headers, HeaderName, Version}};
 use super::response::StatusCode;
 
 #[derive(Serialize, Deserialize)]
@@ -80,11 +79,9 @@ impl Server {
         }
 
         let listener = listener.unwrap();
-
-        info!(
-            "Serving on port {}.",
-            self.port
-        );
+        
+        log(LogLevel::INFO, format!("Serving on port {}.", self.port));
+        
         loop {
             // we read every request that the listener has recieved and try to handle it
             let (stream, _) = listener.accept().unwrap();
