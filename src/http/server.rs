@@ -13,9 +13,13 @@ use crate::http::{request::{Request, Method}, response::Response, Headers, Heade
 use super::response::StatusCode;
 
 #[derive(Serialize, Deserialize)]
-pub struct RouteHttpConfig {
-    headers: Headers, 
+pub struct RouteRequestConfig {
     methods: Vec<Method> 
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct RouteResponseConfig {
+    headers: Headers 
 }
 
 #[derive(Serialize, Deserialize)]
@@ -23,11 +27,13 @@ pub struct RouteHttpConfig {
 pub enum Route {
     Text { 
         text: String,
-        http: RouteHttpConfig
+        request: RouteRequestConfig,
+        response: RouteResponseConfig
     },
     File { 
         source: String,
-        http: RouteHttpConfig
+        request: RouteRequestConfig,
+        response: RouteResponseConfig
     }
 }
 
@@ -105,15 +111,17 @@ fn create_response(server: &Server, request: &Request) -> Response {
     };
 
     let response = match route_info {
-        Route::Text { text, http } => create_text_response(
+        Route::Text { text, request: request_config, response: response_config } => create_text_response(
             request,
             text,
-            http
+            request_config,
+            response_config
         ),
-        Route::File { source, http } => create_file_response(
+        Route::File { source, request: request_config, response: response_config } => create_file_response(
             request,
             source,
-            http
+            request_config,
+            response_config
         )
     };
 
@@ -138,16 +146,17 @@ fn create_404_response() -> Response {
 fn create_text_response(
     request: &Request, 
     text: &String, 
-    http_config: &RouteHttpConfig
+    request_config: &RouteRequestConfig,
+    response_config: &RouteResponseConfig
 ) -> Response {
-    if !http_config.methods.contains(&request.method) {
+    if !request_config.methods.contains(&request.method) {
         return create_404_response();
     }
     
     return Response::new(
         StatusCode::OK.into(),
         Version::new("HTTP".to_string(), "1.1".to_string()),
-        http_config.headers.clone(),
+        response_config.headers.clone(),
         text.to_string()
     );
 }
@@ -155,9 +164,10 @@ fn create_text_response(
 fn create_file_response(
     request: &Request, 
     path: &String, 
-    http_config: &RouteHttpConfig
+    request_config: &RouteRequestConfig,
+    response_config: &RouteResponseConfig
 ) -> Response {
-    if !http_config.methods.contains(&request.method) {
+    if !request_config.methods.contains(&request.method) {
         return create_404_response();
     }
 
@@ -171,7 +181,7 @@ fn create_file_response(
         Err(_) => return create_404_response()
     };
 
-    let mut headers = http_config.headers.clone();
+    let mut headers = response_config.headers.clone();
     let _ = headers.remove(HeaderName::ContentLength);
     let _ = headers.insert(HeaderName::ContentLength, resource.len().to_string());
 
