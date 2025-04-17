@@ -64,30 +64,20 @@ impl Request {
 
     pub fn read_from_stream(mut stream: &TcpStream) -> Result<Self, Box<dyn Error>> {
         // we initialize out request buffer that we will be reading request's data into
-        let mut request_buf = [0u8; 4096];
+        let mut request_buf = [0u8; 8092];
         // this will represent all out decoded data of request
         let mut request = String::new();
 
-        // as because we cannot simply read the entire request from the network i/o
-        // we read the bytes of it in chunks, sequentially
-        loop {
-            let bytes_read = stream.read(&mut request_buf).unwrap();
-            if bytes_read == 0 {
-                // if we had read 0 bytes it means that we read entirity of the request
-                // so we stop reading it
-                break;
-            }
-
-            // we decode the request chunk we read from network i/o
-            // and append it to out request string
-            let request_chunk = String::from_utf8_lossy(&request_buf[0..bytes_read]).to_string();
-            request.push_str(request_chunk.as_str());
-
-            // the full request has been recieved
-            if request_chunk.ends_with("\r\n\r\n") {
-                break;
-            }
-        }
+        match stream.read(&mut request_buf) {
+            Ok(n) => {
+                println!("{}", n);
+                let request_chunk = String::from_utf8_lossy(&request_buf[0..n]).to_string();
+                // we decode the request chunk we read from network i/o
+                // and append it to out request string
+                request.push_str(request_chunk.as_str());
+            },
+            _ => ()
+        };
 
         // we parse our request
         let request = Self::try_from(request);
@@ -163,10 +153,14 @@ impl TryFrom<String> for Request {
             Headers::from(s)
         };
 
+        println!("Parsing the body");
+        
         let body = request_parts
             .get(1)
             .unwrap_or(&"")
             .to_string();
+
+        println!("Parsed the body");
 
         return Ok(Self::new(method, path, version, headers, body));
     }
