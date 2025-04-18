@@ -132,8 +132,7 @@ impl Into<String> for Headers {
                 let value = self.get(name).unwrap();
                 let name: String = name.clone().into();
 
-                format!("{}: {}\n", name, value)
-            
+                format!("{}: {}\n", name, value)            
             })
             .collect::<String>();
 
@@ -141,28 +140,38 @@ impl Into<String> for Headers {
     }
 }
 
-impl From<String> for Headers {
-    fn from(s: String) -> Self {
+impl TryFrom<String> for Headers {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
         let mut headers = Self::new();
-        let rows = s.lines();
-        
-        for row in rows {
-            let split = row.split(": ").collect::<Vec<&str>>();
+        let lines = s.lines();
 
-            if split.len() < 2 {
-                continue;
+        for line in lines {
+            let mut key = "".to_string();
+            let mut value = "".to_string();
+
+            let mut i = 0;
+
+            for c in line.chars() {
+                match (i, c) {
+                    (0, ' ') => {
+                        i += 1; 
+                        continue;
+                    },
+                    (0, ':') => { continue; },
+                    (0, _) => { key.push(c); },
+                    (1, _) => { value.push(c); },
+                    (_, _) => ()
+                }
             }
-
-            let key = match serde_json::from_str(&split.get(0).unwrap()) {
-                Ok(name) => name,
-                Err(_) => continue
-            };
-            let value = split.get(1).unwrap().to_string();
-
-            let _ = headers.insert(key, value);
+            
+            let name = HeaderName::try_from(key)?;
+            let _ = headers.insert(name, value);
         }
+        
         let headers = headers;
 
-        return headers;
+        return Ok(headers);
     }
 }

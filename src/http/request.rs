@@ -1,6 +1,7 @@
 use std::{error::Error, io::{Read, Write}, net::TcpStream};
-use crate::http::{response::Response, server::Server, method::Method, headers::Headers, version::Version};
+use crate::http::{response::Response, server::Server, method::Method, headers::{Headers,HeaderName}, version::Version};
 
+#[derive(Debug)]
 pub struct Request {
     pub method: Method,
     pub path: String,
@@ -71,61 +72,117 @@ impl TryFrom<String> for Request {
     type Error = String;
 
     fn try_from(string: String) -> Result<Self, Self::Error> {
-        let mut rows = string.lines();
-        let first_row = match rows.nth(0) {
-            Some(row) => row,
-            None => return Err("Invalid request.".to_string()) 
-        };
-        
-        let columns = first_row.split(' ').collect::<Vec<&str>>();
+        let lines = string
+            .lines()
+            .enumerate();
 
-        if columns.len() < 3 {
-            return Err("Invalid request.".into());
+        let mut headers = Headers::new();
+        let mut body = "".to_string();
+
+        let mut first_line: Option<(Method, String, Version)> = None;
+        let mut is_body = false;
+
+        for (idx, line) in lines {
+            match (idx, line) {
+                (0, _) => {
+                    let p = match process_first_line(line.to_string()) {
+                        Ok(p) => p,
+                        Err(_) => return Err("Invalid request.".to_string())
+                    };
+
+                    first_line = Some(p);
+                },
+                (i, "") if i > 0 => { 
+                    is_body = true;
+                    continue;
+                },
+                (_, line) if is_body => {
+                    body += line;
+                    body += "\n";
+                },
+                (_, line) => {
+                    let (name, value) = match process_header_line(line.to_string()) {
+                        Ok(v) => v,
+                        Err(_) => return Err("Invalid request".into())
+                    };
+
+                    let _ = headers.insert(name, value);
+                }
+            }
         }
 
-        let method = {
-            let s = columns.get(0)
-                .unwrap()
-                .to_string();
-
-            match Method::try_from(s) {
-                Ok(method) => method,
-                Err(err) => return Err(err.to_string().into())
-            }
-        };
-        let path = columns.get(1)
-            .unwrap()
-            .to_string();
-
-        let version = {
-            let s = columns.get(2).unwrap().to_string(); 
-            
-            match Version::try_from(s) {
-                Ok(version) => version,
-                Err(err) => return Err(err.into())
-            }
+        let first_line = match first_line {
+            Some(first_line) => first_line,
+            None => return Err("Invalid request.".to_string())
         };
 
-        let request_parts = string.split("\r\n").collect::<Vec<&str>>();
-
-        let headers = {
-            let s = request_parts
-                .get(0)
-                .unwrap_or(&"")
-                .to_string();
-
-            Headers::from(s)
+        let method = match Method::try_from(first_line.0) {
+            Ok(method) => method,
+            Err(err) => return Err(err.to_string())
+        };
+        let path = first_line.1;
+        let version = match Version::try_from(first_line.2) {
+            Ok(version) => version,
+            Err(err) => return Err(err.to_string())
         };
 
-        println!("Parsing the body");
-        
-        let body = request_parts
-            .get(1)
-            .unwrap_or(&"")
-            .to_string();
-
-        println!("Parsed the body");
-
-        return Ok(Self::new(method, path, version, headers, body));
+        return Ok(Request::new(
+            method,
+            path,
+            version,
+            headers,
+            body
+        ));
     }
+}
+
+fn process_first_line(line: String) -> Result<(Method, String, Version), String> {
+    let mut method = "".to_string();
+    let mut path = "".to_string();
+    let mut version = "".to_string();
+
+    let mut i = 0;
+
+    for c in line.chars() {
+        if c == ' ' {
+            i += 1;
+            continue;
+        }
+        
+        match i {
+            0 => { method.push(c) },
+            1 => { path.push(c) },
+            2 => { version.push(c) },
+            _ => ()
+        };
+    }
+
+    let method = Method::try_from(method)?;
+    let version = Version::try_from(version)?;
+
+    return Ok((method, path, version));
+}
+
+fn process_header_line(line: String) -> Result<(HeaderName, String), String> {
+    let mut key = "".to_string();
+    let mut value = "".to_string();
+
+    let mut i = 0;
+
+    for c in line.chars() {
+        match (i, c) {
+            (0, ' ') => {
+                i += 1; 
+                continue;
+            },
+            (0, ':') => { continue; },
+            (0, _) => { key.push(c); },
+            (1, _) => { value.push(c); },
+            _ => ()
+        }
+    }
+    
+    let name = HeaderName::try_from(key)?;
+
+    return Ok((name, value));
 }

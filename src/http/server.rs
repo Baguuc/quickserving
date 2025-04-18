@@ -145,6 +145,7 @@ fn create_text_response(
     request_config: &RouteRequestConfig,
     response_config: &RouteResponseConfig
 ) -> Response {
+    println!("{:?}", request);
     if !request_config.methods.contains(&request.method) {
         return create_404_response();
     }

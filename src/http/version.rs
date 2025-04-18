@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Version {
     pub name: String,
     pub version: String,
@@ -17,12 +18,12 @@ impl ToString for Version {
 
 impl TryFrom<String> for Version {
     type Error = String;
-    
+
     fn try_from(s: String) -> Result<Self, Self::Error> {
         let version_split = s.split("/").collect::<Vec<&str>>();
 
         if version_split.len() < 2 {
-            return Err("Invalid version string.".into());
+            return Err("Invalid version string.".to_string());
         }
 
         let version = Version::new(

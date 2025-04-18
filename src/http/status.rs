@@ -1,7 +1,7 @@
 use serde::{self, Serialize, Deserialize};
 
 // status codes and reasons (messages) fetched from https://status.js.org
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum StatusCode {
     #[serde(rename="Continue")]
     Continue,
