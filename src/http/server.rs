@@ -8,8 +8,7 @@ use std::{
 use chrono::Utc;
 use serde::{self, Serialize, Deserialize};
 use serde_json::Value;
-use crate::{logging::{LogLevel, log}, http::{request::{Request, Method}, response::Response, Headers, HeaderName, Version}};
-use super::response::StatusCode;
+use crate::{logging::{LogLevel, log}, http::{request::Request, method::Method, response::Response, headers::{Headers,HeaderName}, version::Version, status::StatusCode}};
 
 #[derive(Serialize, Deserialize)]
 pub struct RouteRequestConfig {

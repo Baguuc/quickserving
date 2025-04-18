@@ -1,41 +1,5 @@
-use crate::http::{Headers, Version};
 use std::{error::Error, io::{Read, Write}, net::TcpStream};
-use serde::{self, Serialize, Deserialize};
-use super::{response::Response, server::Server};
-
-#[derive(Serialize, Deserialize, PartialEq, Eq)]
-pub enum Method {
-    GET,
-    HEAD,
-    OPTIONS,
-    TRACE,
-    PUT,
-    DELETE,
-    POST,
-    PATCH,
-    CONNECT
-}
-
-impl TryFrom<String> for Method {
-    type Error = String;
-
-    fn try_from(s: String) -> Result<Self, Self::Error> {
-        match serde_json::from_str(format!("\"{}\"", s).as_str()) {
-            Ok(method) => return Ok(method),
-            Err(err) => return Err(err.to_string()),
-        };
-    }
-}
-
-impl Into<String> for Method {
-    fn into(self) -> String {
-        return serde_json::to_string(&self)
-            .unwrap()
-            .trim_matches('"')
-            .to_string();
-    }
-}
-
+use crate::http::{response::Response, server::Server, method::Method, headers::Headers, version::Version};
 
 pub struct Request {
     pub method: Method,
