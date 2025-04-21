@@ -1,82 +1,105 @@
 ## Docs
 This page covers documentation about route configuration attributes.
 
-# Route types
-Routes are split into following types, each one is described below.
-
-#### File route
-The file route is used for serving a specific file to the client.
+## Request data
+Every request recieved by quickserving is tried to be matched against one of all the defined routes.
+Each route can specify one or more responses for the same path, matching other request's data, for example methods.
+Here is all the supported (at the time) data that the route is matching:
+- HTTP Method (GET, POST etc)
 Example:
-```js
-{
-  "routes": {
-    // this will result in looking for {directory attribute value}/index.html
-    // if the client requests the "/" path
-    // for example ./index.html or ./somesetdir/index.html etc.
-    "/": {
-      "type": "file",
-      "source": "index.html"
-    }
-  }
-}
 ```
-#### Text route
-Text routes are just serving provided text.
-Example:
-```js
 {
+  "port": 3000,
   "routes": {
-    // this will serve the text "Hello, World" with text/plain mimetype
-    // on /hello route
-    "/hello": {
-      "type": "text",
-      "text": "Hello, World!"
-    }
-  }
-}
-```
-
-# HTTP
-Every route can define http-related rules (like returned headers, allowed methods for it etc) thru request and response options.
-The request config defines the requirements that the recieved request should follow to get the 200 code from the route it's requesting,
-while the response config defines how the response should be constructed.
-More on HTTP definitions below. 
-
-## Request
-All of the request configuration options are described below.
-
-#### Methods
-Every route can define what HTTP methods it allows to pass into itself.
-Example:
-```js
-{
-  "routes": {
-    "/": {
-      "http": {
-        "methods": [ "GET" ]
-      }
-    }
-  }
-}
-```
-
-## Response
-All of the response configuration options are described below.
-
-#### Headers
-Every route can define HTTP headers that will be sent as part of the response.
-The Content-Length header will be overidden in file routes.
-Example:
-```js
-{
-  "routes": {
-    "/": {
-      "http": {
-        "headers": {
-          "Content-Type": "application/json"
+    "/greet": [
+      {
+        "method": "POST",
+        "response": {
+          "type": "text",
+          "text": "Hello, World!",
+          "http": {
+            "headers": {}
+          }
+        }
+      },
+      {
+        "method": "DELETE",
+        "response": {
+          "type": "text",
+          "text": "Goodbye, World!",
+          "http": {
+            "headers": {}
+          }
         }
       }
-    }
+    ]
   }
 }
 ```
+The above configuration will respond with "Hello, World!" text when requested with POST method, and "Goodbye World!" when requested with DELETE method, even tho they are on the same path (/greet).
+
+
+## Response data
+Each route have their own response.
+Responses are split into multiple types.
+The response type is determined by the "type" attribute in them".
+Here are description of all response types:
++ text - route responds with text defined in the "text" attribute;
++ file - route tries to server the file existing at path from "source" attribute, returning 404 response when the file cannot be found;
+Each response (even in the same path as shown before) can have different types.
+Example:
+```
+{
+  "port": 3000,
+  "routes": {
+    "/greet": [
+      {
+        "method": "POST",
+        "response": {
+          "type": "text",
+          "text": "Hello, World!",
+          "http": {
+            "headers": {}
+          }
+        }
+      },
+      {
+        "method": "DELETE",
+        "response": {
+          "type": "file",
+          "source": "goodbye.txt",
+          "http": {
+            "headers": {}
+          }
+        }
+      }
+    ]
+  }
+}
+```
+This configuration will respond with "Hello" text when requested with POST method and "goodbye.txt" file when requested with the DELETE method.
+
+## HTTP config
+Each response can configure their own http metadata (headers etc).
+To configure response's http metadata you can specify it in the "http" attribute.
+Example:
+```
+{
+  "port": 3000,
+  "routes": {
+    "/greet": [
+      {
+        "method": "GET",
+        "response": {
+          "type": "text",
+          "text": "{ \"msg\": \"Hello, World!\" }",
+          "http": {
+            "headers": {
+                "Content-Type": "application/json"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
