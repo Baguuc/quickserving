@@ -2,9 +2,9 @@ use std::{fs::File, io::Read};
 
 use quickserving_core::{
     logging::{LogLevel, log},
-    http::server::Server
+    http::server::Server,
+    config::ServerConfig
 };
-use serde_json::Value;
 
 fn main() {
     let config_file_result = File::options()
@@ -32,15 +32,8 @@ fn main() {
         }
     };
 
-    let config_json = match serde_json::from_str::<Value>(config_str.as_str()) {
-        Ok(json) => json,
-        Err(_) => {
-            log(LogLevel::ERROR, "Cannot read config file \"quickserving.json\", invalid json format.".to_string());
-            return;
-        }
-    };
-
-    let server: Server = config_json.into();
+    let config: ServerConfig = config_str.try_into().unwrap();
+    let server = Server::new(config);
     let setup_result = server.listen();
 
     if setup_result.is_err() {

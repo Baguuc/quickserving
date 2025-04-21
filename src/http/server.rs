@@ -1,77 +1,25 @@
 use std::{
-    collections::HashMap,
     error::Error,
     fs::File,
     io::Read,
     net::TcpListener,
 };
 use chrono::Utc;
-use serde::{self, Serialize, Deserialize};
-use serde_json::Value;
-use crate::{logging::{LogLevel, log}, http::{request::Request, method::Method, response::Response, headers::{Headers,HeaderName}, version::Version, status::StatusCode}};
+use crate::{logging::{LogLevel, log}, http::{request::Request, response::Response, headers::{Headers,HeaderName}, version::Version, status::StatusCode}, config::{ServerConfig, RequestedRoute, ResponseConfig, ResponseHTTPConfig}};
 
-#[derive(Serialize, Deserialize)]
-pub struct RouteRequestConfig {
-    methods: Vec<Method> 
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct RouteResponseConfig {
-    headers: Headers 
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "lowercase")]
-pub enum Route {
-    Text { 
-        text: String,
-        request: RouteRequestConfig,
-        response: RouteResponseConfig
-    },
-    File { 
-        source: String,
-        request: RouteRequestConfig,
-        response: RouteResponseConfig
-    }
-}
 
 pub struct Server {
-    pub port: u16,
-    pub routes: HashMap<String, Route>
-}
-
-impl From<Value> for Server {
-    fn from(value: Value) -> Self {
-        #[derive(Deserialize)]
-        struct Deserialized {
-            port: Option<u16>,
-            routes: Option<HashMap<String, Route>>
-        }
-
-        let deserialized = serde_json::from_value::<Deserialized>(value)
-            .unwrap();
-        let default = Self::default();
-
-        return Self {
-            port: deserialized.port.unwrap_or(default.port),
-            routes: deserialized.routes.unwrap_or(default.routes)
-        };
-    }
-}
-
-impl Default for Server {
-    fn default() -> Self {
-        return Self {
-            port: 3000,
-            routes: HashMap::new()
-        };
-    }
+    config: ServerConfig
 }
 
 impl Server {
+    pub fn new(config: ServerConfig) -> Self {
+        return Self { config };
+    }
+
     pub fn listen(self: Self) -> Result<(), Box<dyn Error>> {
         // we bind our listener to port from self
-        let listener = TcpListener::bind(format!("0.0.0.0:{}", self.port));
+        let listener = TcpListener::bind(format!("0.0.0.0:{}", self.config.port));
 
         if listener.is_err() {
             return Err("this port is already in use.".into());
@@ -79,7 +27,7 @@ impl Server {
 
         let listener = listener.unwrap();
         
-        log(LogLevel::INFO, format!("Serving on port {}.", self.port));
+        log(LogLevel::INFO, format!("Serving on port {}.", self.config.port));
         
         loop {
             // we read every request that the listener has recieved and try to handle it
@@ -99,25 +47,24 @@ impl Server {
 }
 
 fn create_response(server: &Server, request: &Request) -> Response {
-    let result = server.routes.get(&request.path);
-
-    let route_info = match result {
+    let result = server.config.routes.get(&RequestedRoute {
+        method: request.method.clone(),
+        path: request.path.clone()
+    });
+    
+    let response_config = match result {
         Some(route_info) => route_info,
         None => return create_404_response()
     };
 
-    let response = match route_info {
-        Route::Text { text, request: request_config, response: response_config } => create_text_response(
-            request,
-            text,
-            request_config,
-            response_config
+    let response = match response_config {
+        ResponseConfig::Text { text, http } => create_text_response(
+            &text,
+            &http
         ),
-        Route::File { source, request: request_config, response: response_config } => create_file_response(
-            request,
-            source,
-            request_config,
-            response_config
+        ResponseConfig::File { source, http } => create_file_response(
+            &source,
+            &http
         )
     };
 
@@ -140,16 +87,9 @@ fn create_404_response() -> Response {
 }
 
 fn create_text_response(
-    request: &Request, 
     text: &String, 
-    request_config: &RouteRequestConfig,
-    response_config: &RouteResponseConfig
+    response_config: &ResponseHTTPConfig
 ) -> Response {
-    println!("{:?}", request);
-    if !request_config.methods.contains(&request.method) {
-        return create_404_response();
-    }
-    
     return Response::new(
         StatusCode::OK.into(),
         Version::new("HTTP".to_string(), "1.1".to_string()),
@@ -159,15 +99,9 @@ fn create_text_response(
 }
 
 fn create_file_response(
-    request: &Request, 
     path: &String, 
-    request_config: &RouteRequestConfig,
-    response_config: &RouteResponseConfig
+    response_config: &ResponseHTTPConfig
 ) -> Response {
-    if !request_config.methods.contains(&request.method) {
-        return create_404_response();
-    }
-
     let resource = match File::open(path) {
         Ok(mut file) => {
             let mut buffer = String::new();

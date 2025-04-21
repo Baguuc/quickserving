@@ -1,6 +1,6 @@
 use serde::{self, Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Debug, Hash)]
 pub enum Method {
     GET,
     HEAD,

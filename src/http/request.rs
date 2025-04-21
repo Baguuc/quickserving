@@ -35,7 +35,6 @@ impl Request {
 
         match stream.read(&mut request_buf) {
             Ok(n) => {
-                println!("{}", n);
                 let request_chunk = String::from_utf8_lossy(&request_buf[0..n]).to_string();
                 // we decode the request chunk we read from network i/o
                 // and append it to out request string
