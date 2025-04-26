@@ -5,7 +5,7 @@ use std::{
     net::TcpListener,
 };
 use chrono::Utc;
-use crate::{logging::{LogLevel, log}, http::{request::Request, response::Response, headers::{Headers,HeaderName}, version::Version, status::StatusCode}, config::{ServerConfig, RequestedRoute, ResponseConfig, ResponseHTTPConfig}};
+use crate::{logging::{LogLevel, log}, http::{request::Request, response::Response, headers::{Headers,HeaderName}, version::Version, status::StatusCode}, config::{ServerConfig, ResponseConfig, ResponseHTTPConfig}};
 
 
 pub struct Server {
@@ -47,12 +47,7 @@ impl Server {
 }
 
 fn create_response(server: &Server, request: &Request) -> Response {
-    let result = server.config.routes.get(&RequestedRoute {
-        method: request.method.clone(),
-        path: request.path.clone()
-    });
-    
-    let response_config = match result {
+    let response_config = match server.config.find_response_config(&request.path, &request.method) {
         Some(route_info) => route_info,
         None => return create_404_response()
     };

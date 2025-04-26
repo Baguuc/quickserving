@@ -21,57 +21,45 @@ pub enum ResponseConfig {
 }
 
 #[derive(Serialize, Deserialize)]
-struct RouteConfig {
+pub struct RouteConfig {
     method: Method,
     response: ResponseConfig
 }
 
-#[derive(Serialize, Deserialize, Hash, PartialEq, Eq)]
-pub struct RequestedRoute {
-    pub method: Method,
-    pub path: String
-}
-
+#[derive(Deserialize)]
 pub struct ServerConfig {
     pub port: u16,
-    pub routes: HashMap<RequestedRoute, ResponseConfig>
+    pub routes: HashMap<String, Vec<RouteConfig>>
 }
 
 impl TryFrom<String> for ServerConfig {
     type Error = String;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
-        #[derive(Deserialize)]
-        struct Raw {
-            port: u16,
-            routes: HashMap<String, Vec<RouteConfig>>
-        }
-
-        let raw = match serde_json::from_str::<Raw>(&s) {
-            Ok(raw) => raw,
+        let config = match serde_json::from_str::<Self>(&s) {
+            Ok(config) => config,
             Err(err) => return Err(err.to_string())
         };
 
-        let mut routes = HashMap::new();
+        return Ok(config);
+    }
+}
 
-        for (path, route) in &raw.routes {
-            for route_config in route {
-                let requested_route = RequestedRoute {
-                    method: route_config.method.clone(),
-                    path: path.to_string()
-                };
-
-                let response_config = route_config.response.clone();
-
-                let _ = routes.insert(requested_route, response_config);
-            }
-        }
-
-        let config = ServerConfig {
-            port: raw.port,
-            routes
+impl ServerConfig {
+    pub fn find_response_config(self: &Self, path: &String, method: &Method) -> Option<ResponseConfig> {
+        let result = match self.routes.get(path) {
+            Some(result) => result,
+            None => return None
         };
 
-        return Ok(config);
+        for route_config in result {
+            if &route_config.method != method {
+                continue;
+            }
+
+            return Some(route_config.response.clone());
+        }
+
+        return None;
     }
 }
